@@ -1,0 +1,3 @@
+node_modules
+contracts/lib/Message.sol
+contracts/lib/TypeCasts.sol

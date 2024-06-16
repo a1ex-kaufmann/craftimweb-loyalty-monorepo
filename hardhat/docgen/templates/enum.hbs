@@ -1,0 +1,15 @@
+{{>common}}
+
+| Value | Index |
+| ---- | ---- |
+{{#each members}}
+| {{name}} | {{@index}}|
+{{/each}}
+
+{{!-- ```solidity
+enum {{name}} {
+{{#each members}}
+  {{name}}{{#unless @last}},{{/unless}}
+{{/each}}
+}
+``` --}}

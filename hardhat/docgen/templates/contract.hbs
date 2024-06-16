@@ -1,0 +1,73 @@
+# {{name}}
+[{{__item_context.file.absolutePath}}](https://github.com/cdevs-group/gamefi-core-contracts/tree/master/{{__item_context.file.absolutePath}})
+
+{{!-- {{log natspec}} --}}
+
+{{#if baseContracts}}
+ Inherited from {{#each baseContracts}}{{#if (ne @index 0)}}, {{/if}}**{{baseName.name}}**{{/each}}
+{{/if}}
+
+{{#if natspec.dev}}
+{{{natspec.dev}}}
+{{/if}}
+
+{{#if (allEnums)}}
+## Enums
+{{#each (allEnums)}}
+{{>item}}
+{{/each}}
+ ---
+{{/if}}
+
+{{#if (allStructs)}}
+## Structures
+{{#each (allStructs)}}
+{{>item}}
+{{/each}}
+ ---
+{{/if}}
+
+{{#if (allModifiers)}}
+## Modifiers
+{{#each (allModifiers)}}
+{{>item}}
+
+<br/>
+<br/>
+
+{{/each}}
+ ---
+{{/if}}
+
+{{#if (allFunctions)}}
+## Functions
+{{#each (allFunctions)}}
+{{>item}}
+
+<br/>
+<br/>
+
+{{/each}}
+ ---
+{{/if}}
+
+{{#if (allEvents)}}
+## Events
+{{#each (allEvents)}}
+{{>item}}
+
+<br/>
+<br/>
+
+{{/each}}
+ ---
+{{/if}}
+
+{{!-- ## Types
+{{#each (allFunctions)}}
+{{#if (or (eq visibility "public") (eq visibility "external"))}}
+{{>item}}
+{{/if}}
+{{/each}} --}}
+
+{{!-- {{/if}} --}}
