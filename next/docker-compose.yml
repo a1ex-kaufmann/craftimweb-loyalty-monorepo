@@ -1,0 +1,11 @@
+version: '3.7'
+
+services:
+  craftimweb-frontend:
+    container_name: craftimweb-frontend
+    build:
+      context: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+

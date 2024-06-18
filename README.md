@@ -1,6 +1,6 @@
 # craftimweb-monorepo
 loyalty system platform
 
-[smart contracts](./hardhat/README.md)
+[smart contracts](./hardhat)
 
-[frontend](./next/README.md)
+[frontend](./next)

@@ -34,7 +34,8 @@ contract BonusSystem {
     bool internal _inited = false;
     Settings internal _settings;
     string internal _metadataURI;
-    address internal _ftToken;
+    address public ftToken;
+    string public name;
 
     uint256 internal _totalUsers = 0;
     mapping(address => User) internal _user;
@@ -43,24 +44,29 @@ contract BonusSystem {
 
     event CancelPurchase(uint256 purchaseId, uint256 timestamp);
 
-    function initialize(address newOwner, string memory metadataURI, Settings memory settings) external returns(bool success) {
-        require(_inited == false, "BonusSystem: already inited");
-
-        _checkSettings(
-            settings.accrualPercent,
-            settings. minAccrualThreshold,
-            settings. writeoffRate,
-            settings.maxWriteoffPercent,
-            settings.isSimultaneous
-        );
-
-        _inited = true;
-        _settings = settings;
-
-        _metadataURI = metadataURI;
-
-        return true;
+    constructor(address token, string memory name_) {
+        ftToken = token;
+        name = name_;
     }
+
+    // function initialize(address newOwner, string memory metadataURI, Settings memory settings) external returns(bool success) {
+    //     require(_inited == false, "BonusSystem: already inited");
+
+    //     _checkSettings(
+    //         settings.accrualPercent,
+    //         settings. minAccrualThreshold,
+    //         settings. writeoffRate,
+    //         settings.maxWriteoffPercent,
+    //         settings.isSimultaneous
+    //     );
+
+    //     _inited = true;
+    //     _settings = settings;
+
+    //     _metadataURI = metadataURI;
+
+    //     return true;
+    // }
 
     function editSettings(Settings memory settings) external returns(bool success) {
         _checkSettings(
@@ -89,7 +95,7 @@ contract BonusSystem {
         bytes memory signature) = abi.decode(purchase_abi_in, (address,uint256,uint256,uint256,string,uint256,bytes));
 
         require(target != address(0), "BonusSystem: address cannot be null");
-        ERC20Bonuses token = ERC20Bonuses(_ftToken);
+        ERC20Bonuses token = ERC20Bonuses(ftToken);
         require(sumTotal > 0, "BonusSystem: sumTotal=0");
         require(token.balanceOf(target) >= bonusPayment, "BonusSystem: not enought balance");
         require(_purchase[purchaseId].status == 0, "BonusSystem: purchase with this ID already exists");
@@ -172,10 +178,10 @@ contract BonusSystem {
     //     _user[target].totalPurchases = _user[target].totalPurchases - 1;
     //     _user[target].totalSum = _user[target].totalSum - sumTotal;
 
-    //     ERC20Bonuses token = ERC20Bonuses(_ftToken);
+    //     ERC20Bonuses token = ERC20Bonuses(ftToken);
 
     //     if (needAccrue > 0) {
-    //         (, bytes memory rawBalance) = _ftToken.staticcall(abi.encodeWithSignature("balanceOf(address)", target));
+    //         (, bytes memory rawBalance) = ftToken.staticcall(abi.encodeWithSignature("balanceOf(address)", target));
     //         uint256 balance = abi.decode(rawBalance, (uint256));
     //         uint256 burningAmount = needAccrue > balance ? balance : needAccrue;
     //         token.burn(target, burningAmount);
@@ -211,10 +217,14 @@ contract BonusSystem {
             _user[userAddress].registered,
             _user[userAddress].totalPurchases,
             _user[userAddress].totalSum,
-            ERC20Bonuses(_ftToken).balanceOf(userAddress)
+            ERC20Bonuses(ftToken).balanceOf(userAddress)
         );
 
         return user_abi_out;
+    }
+
+    function accrueBonuses(address userAddress, uint256 amount) external {
+        ERC20Bonuses(ftToken).mint(userAddress, amount);
     }
 
     function isInitialized() external view returns(bool) {
@@ -236,8 +246,8 @@ contract BonusSystem {
     }
 
     function properties() external view returns(bytes memory properties_abi) { 
-        (, bytes memory rawTokenName) = _ftToken.staticcall(abi.encodeWithSignature("name()"));
-        (, bytes memory rawTokenSymbol) = _ftToken.staticcall(abi.encodeWithSignature("symbol()"));
+        (, bytes memory rawTokenName) = ftToken.staticcall(abi.encodeWithSignature("name()"));
+        (, bytes memory rawTokenSymbol) = ftToken.staticcall(abi.encodeWithSignature("symbol()"));
         string memory tokenName = abi.decode(rawTokenName, (string));
         string memory tokenSymbol = abi.decode(rawTokenSymbol, (string));
         return abi.encode(
@@ -252,7 +262,7 @@ contract BonusSystem {
 
     function erc20tokens() external view returns(address[] memory) {
         address[] memory result = new address[](1);
-        result[0] = _ftToken;
+        result[0] = ftToken;
         return result;
     }
 
@@ -279,7 +289,7 @@ contract BonusSystem {
             _user[target].registered,
             _user[target].totalPurchases,
             _user[target].totalSum,
-            ERC20Bonuses(_ftToken).balanceOf(target)
+            ERC20Bonuses(ftToken).balanceOf(target)
         );
     }
 
@@ -295,9 +305,9 @@ contract BonusSystem {
         return _totalUsers;
     }
 
-    function name() external view returns(string memory) {
-        return "BonusSystem";
-    }
+    // function name() external view returns(string memory) {
+    //     return "BonusSystem";
+    // }
 
     function version() external view returns(string memory) {
         return "0.0.1";

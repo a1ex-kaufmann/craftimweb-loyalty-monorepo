@@ -1,0 +1,5 @@
+export const HYPER_LANE_EXPLORER_LINK = 'https://explorer.hyperlane.xyz/?search='
+export const GIT_BOOK_LINK = 'https://zeroway.gitbook.io/'
+export const TELEGRAM_LINK = 'https://t.me/zeroway_announcements'
+export const DISCORD_LINK = 'https://discord.gg/U39D4Jxp5E'
+export const TWITTER_LINK = 'https://twitter.com/zeroway_io'
