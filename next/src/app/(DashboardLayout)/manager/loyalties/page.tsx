@@ -19,10 +19,10 @@ import { formatEther, parseEther } from 'viem'
 import { useNotificationContext } from '../../context/Notification'
 
 
-interface TokenData {
+interface LoyaltyData {
   address: string;
   name: string;
-  totalSupply: string;
+  token: string;
 }
 
 const selectedChainId = 97;
@@ -33,7 +33,7 @@ const useDeploy = () => {
   const [isMinting, setIsMinting] = useState(false)
   const { sendTransaction } = useSendTransaction()
 
-  const deployTokenHandler = async (name: string) => {
+  const deployLoyaltyHandler = async (token: string, name: string) => {
     try {
       if (!address) {
         addNotification({ title: CONNECT_WALLET_MESSAGE })
@@ -42,7 +42,7 @@ const useDeploy = () => {
       }
 
       if (!name) {
-        addNotification({ title: 'Введите название токена' })
+        addNotification({ title: 'Введите название программы лояльности' })
 
         return
       }
@@ -54,13 +54,13 @@ const useDeploy = () => {
       }
 
       const publicClient = getPublicClientByChainId(selectedChainId)
-      const contract = contracts.tokenFactory[selectedChainId]
+      const contract = contracts.loyaltyFactory[selectedChainId]
       setIsMinting(true)
 
       const fee = (await publicClient?.readContract({
         ...contract,
-        functionName: 'deployERC20Bonuses',
-        args: [name],
+        functionName: 'deployBonusSystem',
+        args: [token, name],
         blockTag: 'pending',
       })) as bigint
 
@@ -68,10 +68,10 @@ const useDeploy = () => {
       // const value = BigNumber(fee.toString()).multipliedBy(1.1)?.toFixed()
 
       const { hash } = await sendTransaction({
-        contractName: 'tokenFactory',
+        contractName: 'loyaltyFactory',
         chainId: selectedChainId,
-        method: 'deployERC20Bonuses',
-        args: [name],
+        method: 'deployBonusSystem',
+        args: [token, name],
         params: {
           value: fee,
         },
@@ -82,7 +82,7 @@ const useDeploy = () => {
       setIsMinting(false)
 
       if (mint?.status === 1) {
-        addNotification({ title: 'Токен задеплоен' })
+        addNotification({ title: 'Программа лояльности создана' })
 
         return
       }
@@ -92,18 +92,18 @@ const useDeploy = () => {
       setIsMinting(false)
       console.log(error)
 
-      addNotification({ title: 'Ошибка при создании токена', details: error?.details || error?.message })
+      addNotification({ title: 'Ошибка при создании программы лояльности', details: error?.details || error?.message })
     }
   }
 
-  return { deployTokenHandler, isMinting }
+  return { deployLoyaltyHandler, isMinting }
 }
 
 
-const getTokens = async () : Promise<[]> => {
+const getLoyalties = async () : Promise<[]> => {
   const publicClient = getPublicClientByChainId(selectedChainId)
   // const { address } = useAccount()
-  const contract = contracts.tokenFactory[selectedChainId]
+  const contract = contracts.loyaltyFactory[selectedChainId]
 
   // console.log(contract)
 
@@ -112,13 +112,13 @@ const getTokens = async () : Promise<[]> => {
       return []
     }
     
-    const tokenList = (await publicClient?.readContract({
+    const loyaltyList = (await publicClient?.readContract({
       ...contract,
-      functionName: 'getTokens',
+      functionName: 'getLoyalties',
       args: [0, 100],
     })) as [];
     // console.log(tokenList)
-    return tokenList;
+    return loyaltyList;
 
   } catch (error) {
     console.log(error)
@@ -129,26 +129,27 @@ const getTokens = async () : Promise<[]> => {
 
 
 const TypographyPage = () => {
-  const [data, setData] = useState<TokenData[]>([]);
-  const [newTokenName, setNewTokenName] = useState('')
-  const { deployTokenHandler, isMinting } = useDeploy()
+  const [data, setData] = useState<LoyaltyData[]>([]);
+  const [newLoyaltyName, setNewLoyaltyName] = useState('')
+  const [newLoyaltyToken, setNewLoyaltyToken] = useState('')
+  const { deployLoyaltyHandler, isMinting } = useDeploy()
 
   useEffect(() => {
     fetchDataFromBackend(); // Вызов функции для получения данных
   }, []);
 
   async function fetchDataFromBackend() {
-    let tokens: any[] = await getTokens();
+    let tokens: any[] = await getLoyalties();
 
 
-    let newData: TokenData[] = [];
+    let newData: LoyaltyData[] = [];
     tokens[0].forEach((item: any, index: any) => {
       // console.log(item)
       // if (index < 3) {
         newData.push({
           address: tokens[0][index],
           name: tokens[1][index],
-          totalSupply: formatEther(tokens[2][index]).toString(),
+          token: tokens[2][index].toString(),
         });
       // }
     })
@@ -157,8 +158,7 @@ const TypographyPage = () => {
   }
 
   const onClickMintHandler = async () => {
-    console.log(newTokenName)
-    await deployTokenHandler(newTokenName)
+    await deployLoyaltyHandler(newLoyaltyToken, newLoyaltyName)
     await fetchDataFromBackend()
   }
 
@@ -173,17 +173,18 @@ const TypographyPage = () => {
             // <p key={item.id}>{item.name}</p>
           ))}
         </div> */}
-        <DashboardCard title="Создать новый токен">
+        <DashboardCard title="Создать новую программу лояльности">
             <Grid container spacing={3}>
               <Grid item sm={12}>
-              <CustomTextField onChange={(e: any) => setNewTokenName(e.target.value)} label="Название токена"> </CustomTextField>
+              <CustomTextField onChange={(e: any) => setNewLoyaltyName(e.target.value)} label="Название"> </CustomTextField>
+              <CustomTextField onChange={(e: any) => setNewLoyaltyToken(e.target.value)} label="Адрес токена"> </CustomTextField>
               <Button onClick={onClickMintHandler}> Создать </Button>
                 {/* <BlankCard></BlankCard> */}
               </Grid>
             </Grid>
 
           </DashboardCard>
-          <DashboardCard title="Список токенов-бонусов">
+          <DashboardCard title="Список программ лояльности">
             <Grid container spacing={3}>
                   {data.map((item) => (
               <Grid item sm={15}>
@@ -191,7 +192,7 @@ const TypographyPage = () => {
                   <CardContent>
                     <Typography variant="h2">{item.name}</Typography>
                     <Typography variant="body1" color="textSecondary">
-                    Всего создано: {item.totalSupply}
+                    Использующийся токен: {item.token}
                     </Typography>
                     <Typography variant="body1" color="textSecondary">
                     Адрес: {item.address}

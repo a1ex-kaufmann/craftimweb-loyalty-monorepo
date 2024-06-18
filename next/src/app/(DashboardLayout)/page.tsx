@@ -33,9 +33,9 @@ const Dashboard = () => {
           <Grid item xs={12} lg={8}>
             <ProductPerformance />
           </Grid>
-          <Grid item xs={12}>
+          {/* <Grid item xs={12}>
             <Blog />
-          </Grid>
+          </Grid> */}
         </Grid>
       </Box>
     </PageContainer>

@@ -13,47 +13,47 @@ import DashboardCard from '@/app/(DashboardLayout)//components/shared/DashboardC
 const products = [
     {
         id: "1",
-        name: "Sunil Joshi",
-        post: "Web Designer",
-        pname: "Elite Admin",
-        priority: "Low",
+        name: "ООО \"Сушибар\"",
+        post: "",
+        pname: "Филадельфия в подарок",
+        priority: "Купонная",
         pbg: "primary.main",
         budget: "3.9",
     },
     {
         id: "2",
-        name: "Andrew McDownland",
-        post: "Project Manager",
-        pname: "Real Homes WP Theme",
-        priority: "Medium",
+        name: "ОАО \"Суперсеть\"",
+        post: "",
+        pname: "Супер-трафик",
+        priority: "Бонусная",
         pbg: "secondary.main",
         budget: "24.5",
     },
     {
         id: "3",
-        name: "Christopher Jamil",
-        post: "Project Manager",
-        pname: "MedicalPro WP Theme",
-        priority: "High",
-        pbg: "error.main",
+        name: "ООО \"Булочная намбер ван\"",
+        post: "",
+        pname: "Вкусно и не грустно",
+        priority: "Купонная",
+        pbg: "primary.main",
         budget: "12.8",
     },
     {
         id: "4",
-        name: "Nirav Joshi",
-        post: "Frontend Engineer",
-        pname: "Hosting Press HTML",
-        priority: "Critical",
-        pbg: "success.main",
-        budget: "2.4",
-    },
+        name: "ООО \"Булочная намбер ван\"",
+        post: "",
+        pname: "Десерт в подарок",
+        priority: "Купонная",
+        pbg: "primary.main",
+        budget: "5.8",
+    }
 ];
 
 
 const ProductPerformance = () => {
     return (
 
-        <DashboardCard title="Product Performance">
+        <DashboardCard title="Самые активные программы лояльности">
             <Box sx={{ overflow: 'auto', width: { xs: '280px', sm: 'auto' } }}>
                 <Table
                     aria-label="simple table"
@@ -71,22 +71,22 @@ const ProductPerformance = () => {
                             </TableCell>
                             <TableCell>
                                 <Typography variant="subtitle2" fontWeight={600}>
-                                    Assigned
+                                    Компания
                                 </Typography>
                             </TableCell>
                             <TableCell>
                                 <Typography variant="subtitle2" fontWeight={600}>
-                                    Name
+                                    Название
                                 </Typography>
                             </TableCell>
                             <TableCell>
                                 <Typography variant="subtitle2" fontWeight={600}>
-                                    Priority
+                                    Тип
                                 </Typography>
                             </TableCell>
                             <TableCell align="right">
                                 <Typography variant="subtitle2" fontWeight={600}>
-                                    Budget
+                                    Оборот
                                 </Typography>
                             </TableCell>
                         </TableRow>

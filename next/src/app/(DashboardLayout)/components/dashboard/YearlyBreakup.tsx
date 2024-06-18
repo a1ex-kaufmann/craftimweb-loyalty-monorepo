@@ -63,7 +63,7 @@ const YearlyBreakup = () => {
   const seriescolumnchart: any = [38, 40, 25];
 
   return (
-    <DashboardCard title="Yearly Breakup">
+    <DashboardCard title="Годовой оборот">
       <Grid container spacing={3}>
         {/* column */}
         <Grid item xs={7} sm={7}>

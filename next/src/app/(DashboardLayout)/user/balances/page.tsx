@@ -19,86 +19,85 @@ import { formatEther, parseEther } from 'viem'
 import { useNotificationContext } from '../../context/Notification'
 
 
-interface TokenData {
+interface BalanceData {
   address: string;
   name: string;
-  totalSupply: string;
+  balance: string;
 }
 
 const selectedChainId = 97;
-const useDeploy = () => {
-  const { addNotification } = useNotificationContext()
-  const { chainId, connector, address } = useAccount()
-  const { switchChainAsync } = useSwitchChain()
-  const [isMinting, setIsMinting] = useState(false)
-  const { sendTransaction } = useSendTransaction()
+// const useDeploy = () => {
+//   const { addNotification } = useNotificationContext()
+//   const { chainId, connector, address } = useAccount()
+//   const { switchChainAsync } = useSwitchChain()
+//   const [isMinting, setIsMinting] = useState(false)
+//   const { sendTransaction } = useSendTransaction()
 
-  const deployTokenHandler = async (name: string) => {
-    try {
-      if (!address) {
-        addNotification({ title: CONNECT_WALLET_MESSAGE })
+//   const deployTokenHandler = async (name: string) => {
+//     try {
+//       if (!address) {
+//         addNotification({ title: CONNECT_WALLET_MESSAGE })
 
-        return
-      }
+//         return
+//       }
 
-      if (!name) {
-        addNotification({ title: 'Введите название токена' })
+//       if (!name) {
+//         addNotification({ title: 'Введите название токена' })
 
-        return
-      }
+//         return
+//       }
 
-      if (selectedChainId !== chainId) {
-        await switchChainAsync({ chainId: selectedChainId, connector })
+//       if (selectedChainId !== chainId) {
+//         await switchChainAsync({ chainId: selectedChainId, connector })
 
-        return
-      }
+//         return
+//       }
 
-      const publicClient = getPublicClientByChainId(selectedChainId)
-      const contract = contracts.tokenFactory[selectedChainId]
-      setIsMinting(true)
+//       const publicClient = getPublicClientByChainId(selectedChainId)
+//       const contract = contracts.tokenFactory[selectedChainId]
+//       setIsMinting(true)
 
-      const fee = (await publicClient?.readContract({
-        ...contract,
-        functionName: 'deployERC20Bonuses',
-        args: [name],
-        blockTag: 'pending',
-      })) as bigint
+//       const fee = (await publicClient?.readContract({
+//         ...contract,
+//         functionName: 'deployERC20Bonuses',
+//         args: [name],
+//         blockTag: 'pending',
+//       })) as bigint
 
-      // console.log('fee', fee)
-      // const value = BigNumber(fee.toString()).multipliedBy(1.1)?.toFixed()
+//       // console.log('fee', fee)
+//       // const value = BigNumber(fee.toString()).multipliedBy(1.1)?.toFixed()
 
-      const { hash } = await sendTransaction({
-        contractName: 'tokenFactory',
-        chainId: selectedChainId,
-        method: 'deployERC20Bonuses',
-        args: [name],
-        params: {
-          value: fee,
-        },
-      })
-      const provider = getProviderByChain(selectedChainId)
-      const mint = await provider?.waitForTransaction(hash)
+//       const { hash } = await sendTransaction({
+//         contractName: 'tokenFactory',
+//         chainId: selectedChainId,
+//         method: 'deployERC20Bonuses',
+//         args: [name],
+//         params: {
+//           value: fee,
+//         },
+//       })
+//       const provider = getProviderByChain(selectedChainId)
+//       const mint = await provider?.waitForTransaction(hash)
 
-      setIsMinting(false)
+//       setIsMinting(false)
 
-      if (mint?.status === 1) {
-        addNotification({ title: 'Токен задеплоен' })
+//       if (mint?.status === 1) {
+//         addNotification({ title: 'Токен задеплоен' })
 
-        return
-      }
+//         return
+//       }
 
-      addNotification({ title: SOMETHING_WENT_WRONG_ERROR_MESSAGE })
-    } catch (error: any) {
-      setIsMinting(false)
-      console.log(error)
+//       addNotification({ title: SOMETHING_WENT_WRONG_ERROR_MESSAGE })
+//     } catch (error: any) {
+//       setIsMinting(false)
+//       console.log(error)
 
-      addNotification({ title: 'Ошибка при создании токена', details: error?.details || error?.message })
-    }
-  }
+//       addNotification({ title: 'Ошибка при создании токена', details: error?.details || error?.message })
+//     }
+//   }
 
-  return { deployTokenHandler, isMinting }
-}
-
+//   return { deployTokenHandler, isMinting }
+// }
 
 const getTokens = async () : Promise<[]> => {
   const publicClient = getPublicClientByChainId(selectedChainId)
@@ -127,40 +126,73 @@ const getTokens = async () : Promise<[]> => {
   return []
 }
 
+const getBalances = async (tokens: String[], account: String) : Promise<[]> => {
+  const publicClient = getPublicClientByChainId(selectedChainId)
+  // const { address } = useAccount()
+  const contract = contracts.tokenFactory[selectedChainId]
+
+  // console.log(contract)
+
+  try {
+    if (!contract?.address) {
+      return []
+    }
+    
+    const tokenList = (await publicClient?.readContract({
+      ...contract,
+      functionName: 'getBalances',
+      args: [tokens, account],
+    })) as [];
+    // console.log(tokenList)
+    return tokenList;
+
+  } catch (error) {
+    console.log(error)
+  }
+
+  return []
+}
+
 
 const TypographyPage = () => {
-  const [data, setData] = useState<TokenData[]>([]);
+  const [data, setData] = useState<BalanceData[]>([]);
   const [newTokenName, setNewTokenName] = useState('')
-  const { deployTokenHandler, isMinting } = useDeploy()
+  const { address } = useAccount()
+  // const { deployTokenHandler, isMinting } = useDeploy()
 
   useEffect(() => {
-    fetchDataFromBackend(); // Вызов функции для получения данных
+    fetchDataFromBackend(address?.toString()); // Вызов функции для получения данных
   }, []);
 
-  async function fetchDataFromBackend() {
+  async function fetchDataFromBackend(address: String | undefined) {
     let tokens: any[] = await getTokens();
 
 
-    let newData: TokenData[] = [];
+    let addresses: String[] = [];
     tokens[0].forEach((item: any, index: any) => {
-      // console.log(item)
-      // if (index < 3) {
-        newData.push({
-          address: tokens[0][index],
-          name: tokens[1][index],
-          totalSupply: formatEther(tokens[2][index]).toString(),
-        });
-      // }
+      addresses.push(tokens[0][index]);
     })
-    console.log(tokens)
-    setData(newData);
+
+    let balances: any[] = await getBalances(addresses, address);
+
+    let newData: BalanceData[] = [];
+    tokens[0].forEach((item: any, index: any) => {
+        if (formatEther(balances[index]).toString() !== '0') {
+          newData.push({
+            address: tokens[0][index],
+            name: tokens[1][index],
+            balance: formatEther(balances[index]).toString(),
+          });
+        }
+    })
+    // console.log(balances)
+    // setData(newData);
   }
 
-  const onClickMintHandler = async () => {
-    console.log(newTokenName)
-    await deployTokenHandler(newTokenName)
-    await fetchDataFromBackend()
-  }
+  // const onClickMintHandler = async () => {
+  //   console.log(newTokenName)
+  //   await fetchDataFromBackend(address)
+  // }
 
   return (
     <PageContainer title="Typography" description="this is Typography">
@@ -173,17 +205,10 @@ const TypographyPage = () => {
             // <p key={item.id}>{item.name}</p>
           ))}
         </div> */}
-        <DashboardCard title="Создать новый токен">
-            <Grid container spacing={3}>
-              <Grid item sm={12}>
-              <CustomTextField onChange={(e: any) => setNewTokenName(e.target.value)} label="Название токена"> </CustomTextField>
-              <Button onClick={onClickMintHandler}> Создать </Button>
-                {/* <BlankCard></BlankCard> */}
-              </Grid>
-            </Grid>
+        {/* <DashboardCard title="Создать новый токен"> */}
 
-          </DashboardCard>
-          <DashboardCard title="Список токенов-бонусов">
+          {/* </DashboardCard> */}
+          <DashboardCard title="Мои бонусы">
             <Grid container spacing={3}>
                   {data.map((item) => (
               <Grid item sm={15}>
@@ -191,7 +216,7 @@ const TypographyPage = () => {
                   <CardContent>
                     <Typography variant="h2">{item.name}</Typography>
                     <Typography variant="body1" color="textSecondary">
-                    Всего создано: {item.totalSupply}
+                    Всего создано: {item.balance}
                     </Typography>
                     <Typography variant="body1" color="textSecondary">
                     Адрес: {item.address}

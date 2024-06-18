@@ -31,13 +31,13 @@ const Menuitems = [
     id: uniqueId(),
     title: "Токены",
     icon: IconDiamond,
-    href: "/utilities/typography",
+    href: "/manager/tokens",
   },
   {
     id: uniqueId(),
     title: "Системы лояльности",
     icon: IconGift,
-    href: "/utilities/shadow",
+    href: "/manager/loyalties",
   },
   {
     navlabel: true,
@@ -47,14 +47,14 @@ const Menuitems = [
     id: uniqueId(),
     title: "Покупки",
     icon: IconCash,
-    href: "/authentication/login",
+    href: "/cashbox/purchases",
   },
-  {
-    id: uniqueId(),
-    title: "Покупатели",
-    icon: IconUserPlus,
-    href: "/authentication/register",
-  },
+  // {
+  //   id: uniqueId(),
+  //   title: "Покупатели",
+  //   icon: IconUserPlus,
+  //   href: "/authentication/register",
+  // },
   {
     navlabel: true,
     subheader: "Пользователь",
@@ -63,7 +63,7 @@ const Menuitems = [
     id: uniqueId(),
     title: "Бонусная карта",
     icon: IconCreditCard,
-    href: "/icons",
+    href: "/user/balances",
   },
   // {
   //   id: uniqueId(),
