@@ -126,7 +126,7 @@ const getTokens = async () : Promise<[]> => {
   return []
 }
 
-const getBalances = async (tokens: String[], account: String) : Promise<[]> => {
+const getBalances = async (tokens: String[], account: `0x${string}` | undefined) : Promise<[]> => {
   const publicClient = getPublicClientByChainId(selectedChainId)
   // const { address } = useAccount()
   const contract = contracts.tokenFactory[selectedChainId]
@@ -157,14 +157,15 @@ const getBalances = async (tokens: String[], account: String) : Promise<[]> => {
 const TypographyPage = () => {
   const [data, setData] = useState<BalanceData[]>([]);
   const [newTokenName, setNewTokenName] = useState('')
-  const { address } = useAccount()
+  let { address } = useAccount()
   // const { deployTokenHandler, isMinting } = useDeploy()
+  if (!address) address = '0x0000000000000000000000000000000000000000'
 
   useEffect(() => {
-    fetchDataFromBackend(address?.toString()); // Вызов функции для получения данных
+    fetchDataFromBackend(address); // Вызов функции для получения данных
   }, []);
 
-  async function fetchDataFromBackend(address: String | undefined) {
+  async function fetchDataFromBackend(address: `0x${string}` | undefined) {
     let tokens: any[] = await getTokens();
 
 

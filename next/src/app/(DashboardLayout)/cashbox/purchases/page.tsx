@@ -33,7 +33,7 @@ const useDeploy = () => {
   const [isMinting, setIsMinting] = useState(false)
   const { sendTransaction } = useSendTransaction()
 
-  const mintTokensHandler = async (token: `0x${string}`, target: `0x${string}` | undefined) => {
+  const mintTokensHandler = async (token: `0x${string}` | string, target: `0x${string}` | undefined) => {
     try {
       if (!address) {
         addNotification({ title: CONNECT_WALLET_MESSAGE })
@@ -49,7 +49,7 @@ const useDeploy = () => {
 
       const publicClient = getPublicClientByChainId(selectedChainId)
       let contract = contracts.loyalty[selectedChainId]
-      contract.address = token;
+      contract.address = `0x${token}`;
       setIsMinting(true)
 
       const fee = (await publicClient?.readContract({
@@ -153,7 +153,7 @@ const TypographyPage = () => {
     setData(newData);
   }
 
-  const onClickMintHandler = async (token: `0x${string}`) => {
+  const onClickMintHandler = async (token: `0x${string}` | string) => {
     console.log(token)
     await mintTokensHandler(token, address)
     await fetchDataFromBackend()
