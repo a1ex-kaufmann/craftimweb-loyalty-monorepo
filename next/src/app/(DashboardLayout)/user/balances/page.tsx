@@ -138,13 +138,13 @@ const getBalances = async (tokens: String[], account: `0x${string}` | undefined)
       return []
     }
     
-    const tokenList = (await publicClient?.readContract({
+    const balanceList = (await publicClient?.readContract({
       ...contract,
       functionName: 'getBalances',
       args: [tokens, account],
     })) as [];
-    // console.log(tokenList)
-    return tokenList;
+    // console.log(balanceList)
+    return balanceList;
 
   } catch (error) {
     console.log(error)
@@ -175,19 +175,20 @@ const TypographyPage = () => {
     })
 
     let balances: any[] = await getBalances(addresses, address);
-
+    
     let newData: BalanceData[] = [];
     tokens[0].forEach((item: any, index: any) => {
-        if (formatEther(balances[index]).toString() !== '0') {
-          newData.push({
-            address: tokens[0][index],
-            name: tokens[1][index],
-            balance: formatEther(balances[index]).toString(),
-          });
-        }
+      if (formatEther(balances[index]).toString() != "0") {
+        newData.push({
+          address: tokens[0][index],
+          name: tokens[1][index],
+          balance: formatEther(balances[index]).toString(),
+        });
+      }
     })
+    console.log(newData)
     // console.log(balances)
-    // setData(newData);
+    setData(newData);
   }
 
   // const onClickMintHandler = async () => {
@@ -217,7 +218,7 @@ const TypographyPage = () => {
                   <CardContent>
                     <Typography variant="h2">{item.name}</Typography>
                     <Typography variant="body1" color="textSecondary">
-                    Всего создано: {item.balance}
+                    Баланс: {item.balance}
                     </Typography>
                     <Typography variant="body1" color="textSecondary">
                     Адрес: {item.address}

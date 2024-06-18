@@ -49,7 +49,7 @@ const useDeploy = () => {
 
       const publicClient = getPublicClientByChainId(selectedChainId)
       let contract = contracts.loyalty[selectedChainId]
-      contract.address = `0x${token}`;
+      contract.address = `0x${token.replace('0x', '')}`;
       setIsMinting(true)
 
       const fee = (await publicClient?.readContract({
@@ -183,7 +183,7 @@ const TypographyPage = () => {
                     <Typography variant="body1" color="textSecondary">
                     Адрес: {item.address}
                     </Typography>
-                    <Button onClick={() => onClickMintHandler(`${item.address}`)}>Начислить</Button>
+                    <Button onClick={() => onClickMintHandler(`${item.address}`)}>Начислить 10 бонусов</Button>
                   </CardContent>
                 </BlankCard>
               </Grid>
