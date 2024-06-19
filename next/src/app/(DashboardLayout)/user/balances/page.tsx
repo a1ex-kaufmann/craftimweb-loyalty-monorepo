@@ -25,7 +25,7 @@ interface BalanceData {
   balance: string;
 }
 
-const selectedChainId = 97;
+const selectedChainId = 111000;
 // const useDeploy = () => {
 //   const { addNotification } = useNotificationContext()
 //   const { chainId, connector, address } = useAccount()

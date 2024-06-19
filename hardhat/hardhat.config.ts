@@ -55,6 +55,8 @@ const MANTA_RPC_URL = process.env.MANTA_RPC_URL || "";
 const MANTA_TESTNET_RPC_URL = process.env.MANTA_TESTNET_RPC_URL || "";
 const ZETACHAIN_RPC_URL = process.env.ZETACHAIN_RPC_URL || "";
 const ZETACHAIN_TESTNET_RPC_URL = process.env.MANTA_TESTNET_RPC_URL || "";
+const SIBERIUM_RPC_URL = process.env.SIBERIUM_RPC_URL || "";
+const SIBERIUM_TESTNET_RPC_URL = process.env.SIBERIUM_TESTNET_RPC_URL || "";
 
 const ETHEREUM_EXPLORER_API_KEY = process.env.ETHEREUM_EXPLORER_API_KEY || "";
 const POLYGON_EXPLORER_API_KEY = process.env.POLYGON_EXPLORER_API_KEY || "";
@@ -72,6 +74,7 @@ const SCROLL_EXPLORER_API_KEY = process.env.SCROLL_EXPLORER_API_KEY || "";
 const MOONBEAM_EXPLORER_API_KEY = process.env.MOONBEAM_EXPLORER_API_KEY || "";
 const MANTA_EXPLORER_API_KEY = process.env.MANTA_EXPLORER_API_KEY || "";
 const ZETACHAIN_EXPLORER_API_KEY = process.env.ZETACHAIN_EXPLORER_API_KEY || "";
+const SIBERIUM_EXPLORER_API_KEY = process.env.SIBERIUM_EXPLORER_API_KEY || "";
 
 const SIGNER_PRIVATE_KEY = process.env.SIGNER_PRIVATE_KEY || NO_PRIVATE;
 
@@ -232,6 +235,14 @@ const config: HardhatUserConfig = {
       url: ZETACHAIN_TESTNET_RPC_URL,
       accounts: [SIGNER_PRIVATE_KEY],
     },
+    siberium: {
+      url: SIBERIUM_TESTNET_RPC_URL,
+      accounts: [SIGNER_PRIVATE_KEY],
+    },
+    siberiumTestnet: {
+      url: SIBERIUM_TESTNET_RPC_URL,
+      accounts: [SIGNER_PRIVATE_KEY],
+    },
   },
   solidity: {
     version: "0.8.19",
@@ -266,6 +277,8 @@ const config: HardhatUserConfig = {
       mantaTestnet: MANTA_EXPLORER_API_KEY,
       zetachain: ZETACHAIN_EXPLORER_API_KEY,
       zetachainTestnet: ZETACHAIN_EXPLORER_API_KEY,
+      siberiumTestnet: SIBERIUM_EXPLORER_API_KEY,
+      siberium: SIBERIUM_EXPLORER_API_KEY,
     },
     customChains: [
       {
@@ -298,6 +311,14 @@ const config: HardhatUserConfig = {
         urls: {
           apiURL: "https://explorer.zetachain.com/api",
           browserURL: "https://explorer.zetachain.com/",
+        },
+      },
+      {
+        network: "siberiumTestnet",
+        chainId: 111000,
+        urls: {
+          apiURL: "https://explorer.test.siberium.net/api",
+          browserURL: "https://explorer.test.siberium.net/",
         },
       },
     ],

@@ -15,6 +15,27 @@ import {
   zetachain,
 } from 'viem/chains'
 import { TChain } from '../../types'
+import { defineChain } from 'viem'
+
+ 
+export const siberium = defineChain({
+  id: 111000,
+  name: 'Siberium Test Network',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'SIBR',
+    symbol: 'SIBR',
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://rpc.test.siberium.net'],
+      webSocket: [],
+    },
+  },
+  blockExplorers: {
+    default: { name: 'Explorer', url: 'https://explorer.test.siberium.net' },
+  },
+})
 
 export const chains: [TChain, ...TChain[]] = [
   { ...celo, icon: '/img/celo.svg' }, //42220
@@ -31,6 +52,7 @@ export const chains: [TChain, ...TChain[]] = [
   { ...manta, icon: '/img/manta.jpeg' }, //169
   { ...zetachain, icon: '/img/zetachain.png' }, //170`
   { ...bscTestnet, icon: '/img/bscTestnet.png' }, //170`
+  { ...siberium, icon: '/img/scroll.svg' }, //111000
 ]
 
 // const testnetChains: [TChain, ...TChain[]] = [{ ...bscTestnet, icon: '/img/bsc.svg' }]

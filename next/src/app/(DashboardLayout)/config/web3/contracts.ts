@@ -28,6 +28,8 @@ import {
 } from '../../constants'
 import { ContractName, ContractConfig, ContractMap } from '../../types'
 
+import { siberium } from './chains'
+
 const commonNftConfig: ContractConfig = {
   address: CONTRACT_NFT_ADDRESS,
   abi: nftAbi,
@@ -39,7 +41,7 @@ const commonFtConfig: ContractConfig = {
 }
 
 const tokenFactoryConfig: ContractConfig = {
-  address: "0x9aC1d747C136C7Eb25E026492423B52A640e59E5",
+  address: "0x3F4F76Fc8A9265a0aE32A1a16346dA03eF297cE3",
   abi: [
     {
       "anonymous": false,
@@ -204,7 +206,7 @@ const tokenFactoryConfig: ContractConfig = {
 }
 
 const loyaltyFactoryConfig: ContractConfig = {
-  address: "0x838bBA70CfDCeFB381dc7bcece640e724B395BbA",
+  address: "0x4BbD9e63eB8115aaa2DAf3c97767A2744B598cA0",
   abi: [
     {
       "anonymous": false,
@@ -1137,16 +1139,16 @@ const contractsMainnet: Record<ContractName, ContractMap> = {
     [zetachain.id]: commonFtConfig,
   },
   loyalty: {
-    [bscTestnet.id]: loyaltyConfig,
+    [siberium.id]: loyaltyConfig,
   },
   loyaltyFactory: {
-    [bscTestnet.id]: loyaltyFactoryConfig,
+    [siberium.id]: loyaltyFactoryConfig,
   },
   erc20: {
-    [bscTestnet.id]: erc20Config,
+    [siberium.id]: erc20Config,
   },
   tokenFactory: {
-    [bscTestnet.id]: tokenFactoryConfig,
+    [siberium.id]: tokenFactoryConfig,
   },
   royalties: {
     [scroll.id]: {
