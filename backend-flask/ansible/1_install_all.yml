@@ -12,6 +12,12 @@
         sh get-docker.sh
         rm get-docker.sh
 
+    - name: Install Docker Compose
+      apt:
+        name: docker-compose-plugin
+        state: present
+        update_cache: yes
+
     - name: Install Caddy
       shell: |
         apt update

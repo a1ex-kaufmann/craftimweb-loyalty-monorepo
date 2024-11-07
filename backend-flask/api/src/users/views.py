@@ -33,10 +33,10 @@ def get_all_users(
     # logger.info(f"Headers: {connexion.request.headers}")
 
     # Check access
-    if _dmapptoken not in FlaskConfig.DM_APP_TOKEN:
-        response = {"errors": f"Not valid credentials dmapptoken: {_dmapptoken}"}
-        logger.info(f"Response: {response}")
-        return response, 401
+    # if _dmapptoken not in FlaskConfig.DM_APP_TOKEN:
+    #     response = {"errors": f"Not valid credentials dmapptoken: {_dmapptoken}"}
+    #     logger.info(f"Response: {response}")
+    #     return response, 401
 
     auto = auto.strip()
     wallet = auto.lower()
