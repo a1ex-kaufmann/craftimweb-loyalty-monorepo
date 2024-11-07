@@ -97,7 +97,7 @@ export const ExpandedCard = ({ store, onClose }: ExpandedCardProps) => {
           animate={{ y: 0, opacity: 1 }}
           // transition={{ delay: 0.1 }}
         >
-          <QRCodeSVG value={`store_id:${store.wallet}`} size={256} />
+          <QRCodeSVG value={`${store.wallet}`} size={256} />
         </motion.div>
       </motion.div>
     </motion.div>
