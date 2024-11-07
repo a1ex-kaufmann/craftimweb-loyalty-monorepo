@@ -2,3 +2,8 @@ loyalty-api.edinorogi.online {
     reverse_proxy localhost:5001
     encode gzip
 }
+
+api.loyalty.joys.cash {
+    reverse_proxy localhost:5001
+    encode gzip
+}
