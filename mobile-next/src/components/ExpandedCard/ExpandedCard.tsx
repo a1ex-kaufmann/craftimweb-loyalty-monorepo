@@ -31,7 +31,7 @@ export const ExpandedCard = ({ store, onClose }: ExpandedCardProps) => {
             tokenABI,
             provider
           )
-          const balance = await tokenContract.balanceOf('0x91d173Fb244b72007249aECc17F6ad6E035605A4')
+          const balance = await tokenContract.balanceOf('0x0bab83b8fcf004ab7181186a9ea216c86abc4daf')
           setTokenBalance(ethers.formatUnits(balance, 18))
         } catch (error) {
           console.error('Error fetching token balance:', error)
