@@ -60,7 +60,7 @@ export const Settings = () => {
               type="text"
               value={userData.firstName}
               onChange={handleChange('firstName')}
-              className="w-full p-3 border rounded-xl bg-gray-50"
+              className="w-full p-3 border rounded-xl bg-gray-50 text-black"
             />
           </div>
           <div>
@@ -72,7 +72,7 @@ export const Settings = () => {
               type="text"
               value={userData.lastName}
               onChange={handleChange('lastName')}
-              className="w-full p-3 border rounded-xl bg-gray-50"
+              className="w-full p-3 border rounded-xl bg-gray-50 text-black"
             />
           </div>
         </div>
@@ -86,7 +86,7 @@ export const Settings = () => {
             type="email"
             value={userData.email}
             onChange={handleChange('email')}
-            className="w-full p-3 border rounded-xl bg-gray-50"
+            className="w-full p-3 border rounded-xl bg-gray-50 text-black"
           />
         </div>
 
@@ -99,7 +99,7 @@ export const Settings = () => {
             type="date"
             value={userData.birthDate}
             onChange={handleChange('birthDate')}
-            className="w-full p-3 border rounded-xl bg-gray-50"
+            className="w-full p-3 border rounded-xl bg-gray-50 text-black"
           />
         </div>
       </div>
