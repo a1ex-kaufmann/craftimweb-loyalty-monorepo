@@ -1,0 +1,14 @@
+- hosts: loyalty_api
+  tasks:
+    - name: Create www directory
+      file:
+        path: /var/www
+        state: directory
+        mode: '0755'
+
+    - name: Clone repository
+      git:
+        repo: https://github.com/a1ex-kaufmann/craftimweb-loyalty-monorepo
+        dest: /var/www/loyalty
+        version: master
+        force: yes

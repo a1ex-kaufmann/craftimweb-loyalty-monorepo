@@ -1,0 +1,36 @@
+{
+  "organisations": [
+    {
+      "name": "Joys джойс",
+      "evotor_status": "SubscriptionActivated",
+      "wallet": "0x3D669fceD6c9306C5B16Bf6e72f046EE3e0F3fbD",
+      "loyalty_address": "0x1a70603Fd6660f3CCeE1A0a17eBC33192930f735"
+    },
+    {
+      "name": "Yandex яндекс",
+      "evotor_status": "SubscriptionTerminated",
+      "wallet": "0x3D669fceD6c9306C5B16Bf6e72f046EE3e0F3fbD",
+      "loyalty_address": "0x1a70603Fd6660f3CCeE1A0a17eBC33192930f735"
+    }
+  ],
+  "users": [
+    {
+      "username": "test1@example.com",
+      "password": "1111",
+      "evotor_user_id": "000",
+      "org_name": "Joys джойс"
+    },
+    {
+      "username": "test2@example.com",
+      "password": "1234",
+      "evotor_user_id": "001",
+      "org_name": "Joys джойс"
+    },
+    {
+      "username": "test3@example.com",
+      "password": "4321",
+      "evotor_user_id": "002",
+      "org_name": "Yandex яндекс"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+all:
+  hosts:
+    loyalty_api:
+      ansible_host: '{{ lookup("env", "ANSIBLE_HOST") }}'
+      ansible_user: '{{ lookup("env", "ANSIBLE_USER") }}'
+      ansible_password: '{{ lookup("env", "ANSIBLE_PASSWORD") }}'
+      ansible_sudo_pass: '{{ lookup("env", "ANSIBLE_PASSWORD") }}'
+      ansible_become: yes

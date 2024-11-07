@@ -1,0 +1,4 @@
+loyalty-api.edinorogi.online {
+    reverse_proxy localhost:5001
+    encode gzip
+}

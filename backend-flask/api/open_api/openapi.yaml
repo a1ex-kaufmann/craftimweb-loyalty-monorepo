@@ -1,0 +1,2052 @@
+openapi: 3.0.3
+info:
+  title: "SC API pos"
+  description: "Модуль для интеграции с кассами для лояльности на смарт контрактах."
+  version: 1.0.0
+servers:
+  - url: https://dm.api/20130701/
+    description: "Production сервер"
+  - url: http://staging-api.example.com
+    description: "Staging сервер"
+externalDocs:
+  description: 'Публичная документация к API Rusbonus'
+  url: 'https://s3.eu-central-1.amazonaws.com/Rusbonus-public-content/POS_API_Specification_Dinect.pdf'
+tags:
+- name: Tokens
+  description: "Управление токенами"
+- name: Users
+  description: "Управление пользователями"
+- name: Cards
+  description: "Сторонние карты"
+- name: Loyalties
+  description: "Программы лоояльности"
+- name: Evotor
+  description: "Evotor's webhooks"
+- name: AdminSC
+  description: "API админки"
+
+paths:
+  /tokens/:
+    post:
+      summary: "Получение нового токена"
+      operationId: src.tokens.views.create_token
+      tags:
+      - Tokens
+      description: "Запрос на получение нового токена."
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                merchant_shop:
+                  $ref: '#/components/schemas/merchant_shop'
+                pos:
+                  $ref: '#/components/schemas/pos'
+                description:
+                  $ref: '#/components/schemas/description'
+
+      responses:
+        '201':
+          description: "Метод возвращает значение токена авторизации, которое затем следует использовать в качестве значения параметра id метода GET этого ресурса и для авторизации при вызове методов других ресурсов. \n\nTокен авторизации приложения должен быть указан в каждом запросе к API."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    $ref: '#/components/schemas/token'
+                  token_url:
+                    $ref: '#/components/schemas/token_url'
+        '401':
+          description: "При обращении к ресурсу без указания токена или с указанием неверного токена возвращается пустой ответ с кодом ошибки 401 Unauthorized."
+        '409':
+          description: "Если для указанного в запросе участника системы (параметр merchant_shop) и кассового терминала (параметр pos) токен авторизации уже был выдан, но ещё не активирован, то будет возвращён статус HTTP ответа 409 Conflict и текстовое сообщение, описывающее ошибочную ситуацию (например, «Для этого терминала уже есть не активированный токен.»)."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  TODO:
+                    type: string
+                    description: "Нет примера ответа в документации"
+                    example: "Нет примера ответа в документации"
+
+  /tokens/{token}:
+    get:
+      summary: "Статус токена авторизации pos"
+      operationId: src.tokens.views.get_token
+      tags:
+      - Tokens
+      description: "Возвращает статус активации токена. В случае если токен авторизации активирован будет возвращён статус HTTP 200 OK, в ином случае 404 Not Found."
+      parameters:
+      - name: token
+        in: path
+        required: true
+        description: "Токен авторизации pos"
+        schema:
+          $ref: '#/components/schemas/token'
+      responses:
+        '200':
+          description: "Если токен авторизации активирован будет получен соответствующий ответ."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  active:
+                    type: boolean
+                    example: true
+        '404':
+          description: "В другом любом случае."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  TODO:
+                    type: string
+                    example: "Нет примера ответа в документации"
+
+    delete:
+      summary: "Отзыв (отключение) токена авторизации pos"
+      operationId: src.tokens.views.delete_token
+      tags:
+      - Tokens
+      description: "Отзыв (отключение) полученного ранее токена. После успешного выполнения возвращается статус HTTP 204 No Content, в ином случае 404 Not Found."
+      parameters:
+      - name: token
+        in: path
+        required: true
+        description: "Токен авторизации pos"
+        schema:
+          $ref: '#/components/schemas/token'
+      responses:
+        '204':
+          description: "Успешное выполнение."
+        '404':
+          description: "В другом любом случае."
+
+
+  /users/:
+    get:
+      summary: "Поиск пользователей"
+      operationId: src.users.views.get_all_users
+      tags:
+      - Users
+      description: "Поиск пользователя системы по одному или нескольким фильтрам. Обязательно должен быть указан хотя бы один фильтр. Если ни один фильтр не указан, метод возвращает ошибку HTTP с кодом 400 Bad Request."
+      security:
+      - bearerAuthPos: []
+      parameters:
+      - $ref: '#/components/parameters/DM-Authorization'
+      - $ref: '#/components/parameters/_dmapptoken'
+      - name: auto
+        in: query
+        required: true
+        description: "Строка цифр длиной до 100.\n\nНомер карты (в Системе или в сторонней дисконтной системе) покупателя или номер купона, принадлежащего покупателю."
+        schema:
+          type: string
+          maxLength: 100
+          pattern: '\d{1,100}'
+      - name: card
+        in: query
+        description: "Строка цифр длиной до 25.\n\nНомер карты покупателя."
+        schema:
+          type: string
+          maxLength: 43
+      - name: phone
+        in: query
+        description: "Строка цифр длиной до 15.\n\nНомер телефона покупателя."
+        schema:
+          type: string
+          maxLength: 15
+      - name: email
+        in: query
+        description: "Строка цифр длиной до 100.\n\nАдрес электронной почты покупателя"
+        schema:
+          type: string
+          maxLength: 100
+      - name: gsrn
+        in: query
+        description: "Строка цифр длиной до 25.\n\nНомер карты покупателя."
+        schema:
+          type: string
+          maxLength: 25
+          pattern: '\d{1,25}'
+      - name: foreigncard
+        in: query
+        schema:
+          type: string
+          maxLength: 100
+          pattern: '\d{1,100}'
+          description: "Строка цифр длиной до 100.\n\nНомер карты покупателя в сторонней дисконтной системе."
+      - name: coupon
+        in: query
+        description: "Строка цифр длиной до 25.\n\nНомер купона, принадлежащего покупателю."
+        schema:
+          type: string
+          maxLength: 25
+          pattern: '\d{1,25}'
+      responses:
+        '200':
+          description: "Возращается массив пользователей, которые подходят под фильтр. Пример ответа на запрос поиска в случае, когда по предоставленным фильтрам не удалось найти ни одного пользователя: []"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '400':
+          description: "Если ни один фильтр не указан."
+
+    post:
+      summary: "Регистрация пользователя"
+      operationId: src.users.views.create_users
+      tags:
+      - Users
+      description: "Регистрация нового пользователя без создания сторонней карты."
+      parameters:
+      - $ref: '#/components/parameters/DM-Authorization'
+      - $ref: '#/components/parameters/_dmapptoken'
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                short_name:
+                  type: string
+                  maxLength: 100
+                  description: "Строка длиной до 100.\n\nКраткое наименование нового пользователя."
+                full_name:
+                  type: string
+                  maxLength: 255
+                  description: "Строка длиной до 255.\n\nПолное наименование нового пользователя"
+                gender:
+                  type: integer
+                  enum:
+                  - 1
+                  - 2
+                  description: "Целое число: 1 или 2.\n\nПол нового пользователя (1 - мужской, 2 -     женский)."
+                phone:
+                  $ref: '#/components/schemas/phone'
+                email:
+                  $ref: '#/components/schemas/email'
+                password:
+                  $ref: '#/components/schemas/password'
+                discount:
+                  $ref: '#/components/schemas/discount'
+                bonus:
+                  $ref: '#/components/schemas/bonus'
+                sum:
+                  $ref: '#/components/schemas/sum'
+                num:
+                  $ref: '#/components/schemas/num'
+      responses:
+        '201':
+          description: "После успешного выполнения запроса возвращается статус HTTP 201 CREATED. "
+          content:
+            application/json:
+              schema:
+                properties:
+                  DIN:
+                    type: integer
+                  ID:
+                    type: string
+                  password:
+                    type: string
+
+              examples:
+                with_password:
+                  summary: With password
+                  value:
+                    DIN: 1008
+                    ID: "4620011139016562321429576"
+                    password: "747702"
+                without_password:
+                  summary: Without password
+                  value:
+                    DIN: 1008
+                    ID: "4620011139016562321429576"
+
+        '409':
+          description: "Если создать нового пользователя невозможно по причине того, что в Системе уже есть пользователь с таким номером телефона или адресом электронной почты, какие указаны в запросе, то будет возвращён статус HTTP 409 CONFLICT."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  TODO:
+                    type: string
+                    description: "Нет примера ответа в документации"
+                    example: "Нет примера ответа в документации"
+
+  /users/{user_id}:
+    get:
+      summary: "Поиск пользователя"
+      operationId: src.users.views.get_user
+      tags:
+      - Users
+      description: "Ответ на вызов этого метода содержит полную и подробную информацию о пользователе, а также ссылки на ресурсы purchases (покупки пользователя у участника Системы, которому принадлежит токен авторизации) и coupons (не погашенные купоны пользователя по активным акциям или предложениям)."
+      parameters:
+      - $ref: '#/components/parameters/DM-Authorization'
+      - $ref: '#/components/parameters/_dmapptoken'
+      - $ref: '#/components/parameters/user_id'
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    put:
+      summary: "Изменить пользователя"
+      operationId: src.users.views.edit_user
+      tags:
+      - Users
+      description: "Установить текущую скидку и/или счётчики накоплений пользователя в магазинах данного участника (определяется по токену авторизации). При успешном выполнении метод возвращает код HTTP ответа 200 OK и подробную информацию о новой дисконтной (виртуальной) карте покупателя. При вызове метода необходимо указать параметры для установки покупателю новой скидки (новая скидка будет рассчитана по счётчикам накоплений согласно действующей программе лояльности):"
+      parameters:
+      - $ref: '#/components/parameters/user_id'
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                sum:
+                  $ref: '#/components/schemas/sum'
+                num:
+                  $ref: '#/components/schemas/num'
+                bonus:
+                  $ref: '#/components/schemas/bonus'
+                percent:
+                  type: integer
+                  minimum: 0
+                  description: "Целое неотрицательное число.\n\nРазмер новой скидки в процентах. Операция завершится успешно только в том случае, если этот размер скидки есть в текущей программе лояльности участника Системы."
+      responses:
+        '200':
+          description: "Измененная информация о пользователе."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /users/{user_id}/coupons/:
+    get:
+      summary: "Получить список купонов пользователя"
+      operationId: src.users.views.get_coupons_by_user
+      tags:
+      - Users
+      description: "Получение списка (с возможностью постраничной выборки) купонов пользователя. При этом возможно указание параметров фильтрации купонов.\n\nItem_N_{attr} обязателен при указании параметра redeem_auto в значении «true»."
+      parameters:
+      - $ref: '#/components/parameters/user_id'
+      - $ref: '#/components/parameters/item_N_gtin'
+      - $ref: '#/components/parameters/item_N_id'
+      - $ref: '#/components/parameters/item_N_gid'
+      - $ref: '#/components/parameters/item_N_q'
+      - $ref: '#/components/parameters/item_N_sum'
+      - $ref: '#/components/parameters/item_N_sumwd'
+      - in: query
+        name: id
+        description: "Целое положительное число. \n\nИдентификатор покупки в Системе."
+        schema:
+          $ref: '#/components/schemas/id'
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Coupon'
+                    description: "Массив (JSON) или список (XML).\n\nКонтейнер (массив или список) купонов. TODO нет модели купона."
+                  page:
+                    type: integer
+                    minimum: 0
+                    description: "Целое положительное число.\n\nНомер страницы ответа."
+                  next:
+                    type: string
+                    description: "URL (HTTP-ссылка).\n\nСсылка на следующую страницу ответа (null или пусто - нет следующей страницы)."
+                  per_page:
+                    type: integer
+                    minimum: 0
+                    description: "Целое положительное число.\n\nМаксимальное количество покупок на одной странице."
+                  total:
+                    type: integer
+                    minimum: 0
+                    description: "Целое неотрицательное число.\n\nОбщее количество покупок в ответе (на всех страницах)."
+                  pages:
+                    type: integer
+                    minimum: 0
+                    description: "Целое положительное число.\n\nКоличество страниц в ответе."
+                  previous:
+                    type: string
+                    description: "URL (HTTP-ссылка).\n\nСсылка на предыдущую страницу ответа (null или пусто - нет предыдущей страницы)."
+
+  /users/{user_id}/coupons/{id}:
+    get:
+      summary: "Полная информацию о купоне"
+      operationId: src.users.views.get_coupon
+      tags:
+      - Users
+      description: "Возвращает полную информацию о купоне (сертификате)."
+      parameters:
+      - $ref: '#/components/parameters/DM-Authorization'
+      - $ref: '#/components/parameters/_dmapptoken'
+      - $ref: '#/components/parameters/user_id'
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        description: "Идентификатор купона (сертификата)."
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Coupon'
+
+  /users/{user_id}/purchases/:
+    get:
+      summary: "Получить список покупок пользователя"
+      operationId: src.users.views.get_purchases_by_user
+      tags:
+      - Users
+      description: "Получение списка (с возможностью постраничной выборки) покупок пользователя у данного участника Системы."
+      parameters:
+      - $ref: '#/components/parameters/DM-Authorization'
+      - $ref: '#/components/parameters/_dmapptoken'
+      - $ref: '#/components/parameters/user_id'
+      - in: query
+        name: id
+        description: "Целое положительное число. \n\nИдентификатор покупки в Системе."
+        schema:
+          $ref: '#/components/schemas/id'
+      - name: doc_id
+        in: query
+        description: "Строка длиной до 50. \n\nИдентификатор покупки в учётной системе участника Системы."
+        schema:
+          $ref: '#/components/schemas/doc_id'
+      - name: begin_date
+        in: query
+        description: "Строка вида: «YYYY-MM-DD HH:MM:SS +hhmm».\n\nНачало интервала фильтра покупок по дате и времени. Формат параметров даты и времени см. в Параметры даты и времени [7]."
+        schema:
+          type: string
+      - name: end_date
+        in: query
+        description: "Строка вида: «YYYY-MM-DD HH:MM:SS +hhmm».\n\nОкончание интервала фильтра покупок по дате и времени. Формат параметров даты и времени см. в Параметры даты и времени [7]."
+        schema:
+          type: string
+      - name: sum_total
+        in: query
+        description: "Неотрицательное число с точностью до 2 знаков после запятой.\n\nСумма покупки без скидки. Формат числовых параметров см. в Числовые параметры [7]."
+        schema:
+          $ref: '#/components/schemas/sum_total'
+      - name: sum_with_discount
+        in: query
+        description: "Неотрицательное число с точностью до 2 знаков после запятой.\n\nСумма покупки со скидкой. Формат числовых параметров см. в Числовые параметры [7]."
+        schema:
+          $ref: '#/components/schemas/sum_with_discount'
+      - name: returned
+        in: query
+        schema:
+          type: string
+          enum:
+          - "true"
+          - "false"
+        description: "Строка «true» или «false».\n\nФильтрует покупки по признаку - возвращена или нет."
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum:
+          - "asc"
+          - "desc"
+        description: "Строка «asc» или «desc».\n\nСортировка покупок по дате. Если передана строка «asc», то покупки сортируются по возрастанию даты.Если передана строка «desc» - по убыванию. Если параметр не указан - покупки выдаются в произвольном порядке."
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Purchase'
+                    description: "Массив (JSON) или список (XML).\n\nКонтейнер (массив или список) покупок (данные о покупке см. в Таблица 14, «Поля покупки.» [36])."
+                  page:
+                    type: integer
+                    format: int32
+                    minimum: 0
+                    description: "Целое положительное число.\n\nНомер страницы ответа."
+                    example: 1
+                  next:
+                    type: string
+                    description: "URL (HTTP-ссылка).\n\nСсылка на следующую страницу ответа (null или пусто - нет следующей страницы)."
+                    nullable: true
+                    example: null
+                  per_page:
+                    type: integer
+                    format: int32
+                    minimum: 0
+                    description: "Целое положительное число.\n\nМаксимальное количество покупок на одной странице."
+                    example: 20
+                  total:
+                    type: integer
+                    format: int32
+                    minimum: 0
+                    description: "Целое неотрицательное число.\n\nОбщее количество покупок в ответе (на всех страницах)."
+                    example: 3
+                  pages:
+                    type: integer
+                    format: int32
+                    minimum: 0
+                    description: "Целое положительное число.\n\nКоличество страниц в ответе."
+                    example: 1
+                  previous:
+                    type: string
+                    description: "URL (HTTP-ссылка).\n\nСсылка на предыдущую страницу ответа (null или пусто - нет предыдущей страницы)."
+                    nullable: true
+                    example: null
+
+
+    post:
+      summary: "Провести покупку пользователя"
+      operationId: src.users.views.create_purchase
+      tags:
+      - Users
+      description: "Метод всегда возвращает статус HTTP 201 Created при успешном проведении (200 OK в случае, если параметр commit не указан или имеет значение False) и полную информацию о проведённой покупке.\n\nПараметры ответа подробно описаны в Таблица 18, «Параметры ответа метода POST ресурса покупок пользователя.» [40]. Если в запросе на проведение (или предварительный расчёт) покупки был указан цифровой купон по акции, которая действует на конкретные номенклатурные позиции, и были указаны все реквизиты номенклатурных позиций покупки, то параметр items ответа содержит рассчитанную стоимость товаров покупки с учётом гашения указанного купона (купонов) и применения программы лояльности точки продажи. \n\nЕсли покупка не проводится (параметр commit не указан или имеет значение «false»), то в ответ на запрос возвращаются автоматически рассчитанные для указанного покупателя, соответствующие программе лояльности организации - владельца магазина, реквизиты покупки - такие как сумма покупки со скидкой, количество начисленных бонусов, сумма уменьшения стоимости покупки при оплате бонусами\n\nЗапрос со значением «true» параметра commit всегда приводит к полному расчёту всех параметров покупки и гашению цифровых купонов. Поэтому проведение покупки (commit равен «true») необходимо выполнять с теми же параметрами, что и запрос на предварительный расчёт реквизитов покупки без проведения (commit не указан или его значение «false»).\n\nОдновременное начисление и списание бонусных баллов. При одновременном начислении и списании бонусных баллов (что настраивается в программе лояльности) ответ от API содержит раздельную информацию о том, сколько бонусных баллов было начислено и списано.\n\nРасширение подарочных накоплений. При включённом расширении подарочных накоплений (в запросе был передан параметр gift с значением «true») ответ от API содержит блок данных вида в примере."
+      parameters:
+      - $ref: '#/components/parameters/DM-Authorization'
+      - $ref: '#/components/parameters/_dmapptoken'
+      - $ref: '#/components/parameters/user_id'
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                doc_id:
+                  $ref: '#/components/schemas/doc_id'
+                curr_iso_code:
+                  $ref: '#/components/schemas/curr_iso_code'
+                curr_iso_name:
+                  $ref: '#/components/schemas/curr_iso_name'
+                sum_total:
+                  $ref: '#/components/schemas/sum_total'
+                sum_with_discount:
+                  $ref: '#/components/schemas/sum_with_discount'
+                bonus_amount:
+                  type: number
+                  format: float
+                  minimum: 0
+                  description: "Неотрицательное число с точностью 2 знака после запятой.\n\nКоличество бонусов, начисленных пользователю за покупку. Формат числовых параметров см. в Числовые параметры [7]."
+                bonus_payment:
+                  type: number
+                  format: float
+                  minimum: 0
+                  description: "Неотрицательное число с точностью 2 знака после запятой.\n\nКоличество бонусов, потраченных пользователем на покупку. Формат числовых параметров см. в Числовые параметры [7]."
+                coupons:
+                  $ref: '#/components/schemas/coupons'
+                date:
+                  $ref: '#/components/schemas/date'
+                item_N_gtin:
+                  $ref: '#/components/schemas/item_N_gtin'
+                item_N_id:
+                  $ref: '#/components/schemas/item_N_id'
+                item_N_gid:
+                  $ref: '#/components/schemas/item_N_gid'
+                item_N_q:
+                  $ref: '#/components/schemas/item_N_q'
+                item_N_sum:
+                  $ref: '#/components/schemas/item_N_sum'
+                item_N_sumwd:
+                  $ref: '#/components/schemas/item_N_sumwd'
+                redeem_auto:
+                  type: string
+                  enum:
+                  - "true"
+                  - "false"
+                  description: "Строка вида «true» или «false». По умолчанию «false».\n\nЕсли значение «true», то купоны пользователя будут подобраны к покупке автоматически."
+                override:
+                  type: string
+                  enum:
+                  - "true"
+                  - "false"
+                  description: "Строка вида «true» или «false». По умолчанию «false».\n\nЕсли значение «true», то сохранить покупку с реквизитами, полученными в запросе, не выполняя при этом каких-либо расчётов (по программам лояльности и купонам)."
+                gift:
+                  type: string
+                  enum:
+                  - "true"
+                  - "false"
+                  description: "Строка вида «true» или «false». По умолчанию «false».\n\nЕсли значение «true», то включить расширение подарочных накоплений. При включённом расширении ответ от API содержит дополнительный блок данных."
+                commit:
+                  type: string
+                  enum:
+                  - "true"
+                  - "false"
+                  description: "Строка вида «true» или «false».\n\nЕсли значение «true», то покупка проводится (сохраняется). В противном случае (False или параметр не указан) производится автоматический расчёт не указанных в запросе реквизитов покупки."
+      responses:
+        '200':
+          description: "Метод всегда возвращает статус HTTP 200 OK при успешном проведении если параметр commit не указан или имеет значение False и полную информацию о проведённой покупке."
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Purchase'
+                  - $ref: '#/components/schemas/Gift_counters'
+              examples:
+                With coupons:
+                  $ref: '#/components/examples/Purchase'
+                Without coupons:
+                  $ref: '#/components/examples/PurchaseWithoutCoupon'
+                Accrual and cancellation:
+                  $ref: '#/components/examples/PurchaseAccrualCancellation'
+                With gift:
+                  $ref: '#/components/examples/PurchaseWithGift'
+        '201':
+          description: "Метод всегда возвращает статус HTTP 201 Created при успешном проведении и полную информацию о проведённой покупке."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Purchase'
+              examples:
+                With coupons:
+                  $ref: '#/components/examples/Purchase'
+                Without coupons:
+                  $ref: '#/components/examples/PurchaseWithoutCoupon'
+                Accrual and cancellation:
+                  $ref: '#/components/examples/PurchaseAccrualCancellation'
+                With gift:
+                  $ref: '#/components/examples/PurchaseWithGift'
+
+  /users/{user_id}/purchases/{id}:
+    get:
+      summary: "Полная информацию о покупке"
+      operationId: src.users.views.get_purchase
+      tags:
+      - Users
+      description: "Возвращает полную информацию о покупке."
+      parameters:
+      - $ref: '#/components/parameters/DM-Authorization'
+      - $ref: '#/components/parameters/_dmapptoken'
+      - $ref: '#/components/parameters/user_id'
+      - in: path
+        name: id
+        required: true
+        schema:
+          $ref: '#/components/schemas/id'
+        description: "Идентификатор покупки."
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Purchase'
+    delete:
+      summary: "Возврат покупки"
+      operationId: src.users.views.delete_purchase
+      tags:
+      - Users
+      description: "Проведение возврата на всю сумму покупки. При успешном выполнении метод возвращает HTTP ответ со статусом 204 No Content."
+      parameters:
+      - $ref: '#/components/parameters/DM-Authorization'
+      - $ref: '#/components/parameters/_dmapptoken'
+      - $ref: '#/components/parameters/user_id'
+      - in: path
+        name: id
+        required: true
+        description: "Идентификатор покупки."
+        schema:
+          $ref: '#/components/schemas/id'
+      responses:
+        '204':
+          description: "При успешном выполнении метод возвращает HTTP ответ со статусом 204 No Content."
+    post:
+      summary: "Провести покупку пользователя"
+      operationId: src.users.views.create_purchase_id
+      tags:
+      - Users
+      description: "Метод всегда возвращает статус HTTP 201 Created при успешном проведении (200 OK в случае, если параметр commit не указан или имеет значение False) и полную информацию о проведённой покупке.\n\nПараметры ответа подробно описаны в Таблица 18, «Параметры ответа метода POST ресурса покупок пользователя.» [40]. Если в запросе на проведение (или предварительный расчёт) покупки был указан цифровой купон по акции, которая действует на конкретные номенклатурные позиции, и были указаны все реквизиты номенклатурных позиций покупки, то параметр items ответа содержит рассчитанную стоимость товаров покупки с учётом гашения указанного купона (купонов) и применения программы лояльности точки продажи. \n\nЕсли покупка не проводится (параметр commit не указан или имеет значение «false»), то в ответ на запрос возвращаются автоматически рассчитанные для указанного покупателя, соответствующие программе лояльности организации - владельца магазина, реквизиты покупки - такие как сумма покупки со скидкой, количество начисленных бонусов, сумма уменьшения стоимости покупки при оплате бонусами\n\nЗапрос со значением «true» параметра commit всегда приводит к полному расчёту всех параметров покупки и гашению цифровых купонов. Поэтому проведение покупки (commit равен «true») необходимо выполнять с теми же параметрами, что и запрос на предварительный расчёт реквизитов покупки без проведения (commit не указан или его значение «false»).\n\nОдновременное начисление и списание бонусных баллов. При одновременном начислении и списании бонусных баллов (что настраивается в программе лояльности) ответ от API содержит раздельную информацию о том, сколько бонусных баллов было начислено и списано.\n\nРасширение подарочных накоплений. При включённом расширении подарочных накоплений (в запросе был передан параметр gift с значением «true») ответ от API содержит блок данных вида в примере."
+      security:
+      - bearerAuthPos: []
+      parameters:
+      - $ref: '#/components/parameters/DM-Authorization'
+      - $ref: '#/components/parameters/_dmapptoken'
+      - $ref: '#/components/parameters/user_id'
+      - in: path
+        name: id
+        required: true
+        description: "Идентификатор покупки."
+        schema:
+          $ref: '#/components/schemas/id'
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                cancel:
+                  $ref: '#/components/schemas/cancel'
+      responses:
+        '200':
+          description: "Метод всегда возвращает статус HTTP 200 OK при успешном проведении если параметр commit не указан или имеет значение False и полную информацию о проведённой покупке."
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Purchase'
+                  - $ref: '#/components/schemas/Gift_counters'
+              examples:
+                With coupons:
+                  $ref: '#/components/examples/Purchase'
+                Without coupons:
+                  $ref: '#/components/examples/PurchaseWithoutCoupon'
+                Accrual and cancellation:
+                  $ref: '#/components/examples/PurchaseAccrualCancellation'
+                With gift:
+                  $ref: '#/components/examples/PurchaseWithGift'
+        '201':
+          description: "Метод всегда возвращает статус HTTP 201 Created при успешном проведении и полную информацию о проведённой покупке."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Purchase'
+              examples:
+                With coupons:
+                  $ref: '#/components/examples/Purchase'
+                Without coupons:
+                  $ref: '#/components/examples/PurchaseWithoutCoupon'
+                Accrual and cancellation:
+                  $ref: '#/components/examples/PurchaseAccrualCancellation'
+                With gift:
+                  $ref: '#/components/examples/PurchaseWithGift'
+
+
+  /cards/:
+    get:
+      summary: "Поиск пользователей"
+      operationId: src.cards.views.get_all_users
+      tags:
+      - Cards
+      description: "Ресурс сторонних карт (базовый URL которого cards/) предназначен для поиска пользователей со сторонней картой, зарегистрированных в Системе.\n\nПоиск пользователя системы со сторонней картой по одному или нескольким фильтрам. Обязательно должен быть указан хотя бы один фильтр.\n\nЕсли по предоставленным фильтрам найден одна или несколько сторонних карт пользователей, то метод возвращает их перечень, который содержит идентификатор сторонней карты пользователя, ссылку (URL) на стороннюю карту, ссылку (URL) на ресурс конкретного пользователя, формат сторонней карты, номер сторонней карты, статус сторонней карты и дату создания сторонней карты."
+      parameters:
+      - $ref: '#/components/parameters/DM-Authorization'
+      - $ref: '#/components/parameters/_dmapptoken'
+      - name: auto
+        in: query
+        description: "Строка цифр длиной до 100.\n\nНомер карты (в Системе или в сторонней дисконтной системе) покупателя или номер купона, принадлежащего покупателю."
+        schema:
+          type: string
+          maxLength: 100
+          pattern: '\d{1,100}'
+      - name: card
+        in: query
+        description: "Строка цифр длиной до 25.\n\nНомер карты покупателя."
+        schema:
+          type: string
+          maxLength: 43
+      - name: phone
+        in: query
+        description: "Строка цифр длиной до 15.\n\nНомер телефона покупателя."
+        schema:
+          type: string
+          maxLength: 15
+      - name: gsrn
+        in: query
+        description: "Строка цифр длиной до 25.\n\nПоследние цифры идентификатора покупателя в формате GSRN."
+        schema:
+          type: string
+          maxLength: 25
+          pattern: '\d{1,25}'
+      - name: foreigncard
+        in: query
+        schema:
+          type: string
+          maxLength: 100
+          pattern: '\d{1,100}'
+          description: "Строка цифр длиной до 100.\n\nНомер карты покупателя в сторонней дисконтной системе."
+      - name: coupon
+        in: query
+        description: "Строка цифр длиной до 25.\n\nНомер купона, принадлежащего покупателю."
+        schema:
+          type: string
+          maxLength: 25
+          pattern: '\d{1,25}'
+      responses:
+        '200':
+          description: "Возращается массив пользователей, которые подходят под фильтр. Пример ответа на запрос поиска в случае, когда по предоставленным фильтрам не удалось найти ни одного пользователя: []"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Card'
+        '400':
+          description: "Если ни один фильтр не указан."
+
+    post:
+      summary: "Регистрация пользователя с картой"
+      operationId: src.cards.views.create_cards
+      tags:
+      - Cards
+      description: "Регистрация нового пользователя с созданием сторонней карты."
+      parameters:
+      - $ref: '#/components/parameters/DM-Authorization'
+      - $ref: '#/components/parameters/_dmapptoken'
+      security:
+      - bearerAuthPos: []
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+              - code
+              properties:
+                short_name:
+                  type: string
+                  maxLength: 100
+                  description: "Строка длиной до 100.\n\nКраткое наименование нового пользователя."
+                full_name:
+                  type: string
+                  maxLength: 255
+                  description: "Строка длиной до 255.\n\nПолное наименование нового пользователя"
+                gender:
+                  type: integer
+                  enum:
+                  - 1
+                  - 2
+                  description: "Целое число: 1 или 2.\n\nПол нового пользователя (1 - мужской, 2 - женский)."
+                phone:
+                  $ref: '#/components/schemas/phone'
+                email:
+                  $ref: '#/components/schemas/email'
+                password:
+                  $ref: '#/components/schemas/password'
+                discount:
+                  $ref: '#/components/schemas/discount'
+                bonus:
+                  $ref: '#/components/schemas/bonus'
+                sum:
+                  $ref: '#/components/schemas/sum'
+                num:
+                  $ref: '#/components/schemas/num'
+                code:
+                  type: string
+                  maxLength: 100
+                  description: "Строка длиной до 100. .\n\nНомер сторонней карты пользователя."
+                format:
+                  type: string
+                  maxLength: 255
+                  description: "Строка длиной до 255.\n\nНаименование формата штрих-кода номера сторонней карты пользователя."
+                bind:
+                  type: boolean
+                  description: "Строка: “True” или “False”.\n\nЕсли истина (“True”), то привязать новую стороннюю карту к учётной записи существующего в Системе пользователя вместо создания нового."
+      responses:
+        '201':
+          description: "После успешного выполнения запроса возвращается статус HTTP 201 CREATED. "
+          content:
+            application/json:
+              schema:
+                properties:
+                  DIN:
+                    type: integer
+                  ID:
+                    type: string
+                  password:
+                    type: string
+
+              examples:
+                with_password:
+                  summary: With password
+                  value:
+                    DIN: 1008
+                    ID: "4620011139016562321429576"
+                    password: "747702"
+                without_password:
+                  summary: Without password
+                  value:
+                    DIN: 1008
+                    ID: "4620011139016562321429576"
+
+        '409':
+          description: "Если создать нового пользователя невозможно по причине того, что в Системе уже есть пользователь с таким номером телефона или адресом электронной почты, какие указаны в запросе, то будет возвращён статус HTTP 409 CONFLICT."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  TODO:
+                    type: string
+                    description: "Нет примера ответа в документации"
+                    example: "Нет примера ответа в документации"
+
+  /loyalties/{merchant_id}:
+    get:
+      summary: "Поиск лояльности"
+      operationId: src.loyalties.views.get_loyalty
+      tags:
+      - Loyalties
+      description: "Получение полной информации о ПЛ (Программы Лояльности) участника Системы Rusbonus. Программа лояльности может отсутствовать, а также содержать нулевые значения порогов и скидок\n\n."
+      parameters:
+      - $ref: '#/components/parameters/DM-Authorization'
+      - $ref: '#/components/parameters/_dmapptoken'
+      - $ref: '#/components/parameters/merchant_id'
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Loyalty'
+
+  /loyalties/{merchant_id}/dmcard/{card}:
+    get:
+      summary: "Поиск лояльности"
+      operationId: src.loyalties.views.get_loyalty_by_card
+      tags:
+      - Loyalties
+      description: "Получение полной информации о ПЛ (Программы Лояльности) участника Системы Rusbonus. Программа лояльности может отсутствовать, а также содержать нулевые значения порогов и скидок\n\n."
+      security:
+      - bearerAuthPos: []
+      parameters:
+      - $ref: '#/components/parameters/DM-Authorization'
+      - $ref: '#/components/parameters/_dmapptoken'
+      - $ref: '#/components/parameters/merchant_id'
+      - $ref: '#/components/parameters/card'
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Loyalty'
+
+  /evotor/user:
+    post:
+      summary: "Регистрация учётной записи"
+      operationId: src.evotor.views.callback_create_user
+      tags:
+      - Evotor
+      description: "Callback о регистрация учётной записи в системе эвотор"
+      security:
+        - bearerAuthEvotor: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  maxLength: 150
+                  description: "Идентификатор пользователя Эвотор."
+                  example: "01-000000000000001"
+                username:
+                  $ref: "#/components/schemas/email"
+                password:
+                  type: string
+                  maxLength: 50
+                  description: "Пароль пользователя"
+                  example: "12345678"
+                password_confirm:
+                  type: string
+                  maxLength: 50
+                  description: "Пароль пользователя ещё раз"
+                  example: "12345678"
+                org_name:
+                  type: string
+                  maxLength: 50
+                  description: "Название организации"
+                  example: "ИП Иванов"
+
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                properties:
+                  userId:
+                    type: string
+                    maxLength: 150
+                    description: "Идентификатор пользователя Эвотор."
+                    example: "01-000000000000001"
+                  token:
+                    type: string
+                    description: "Bearer-токен, с помощью которого Облако Эвотор авторизует свои запросы к стороннему сервису."
+                    example: "toaWaep4chou7ahkoogiu9Iusaht9ima"
+
+  /evotor/user/auth:
+    post:
+      summary: "Авторизация пользователя"
+      operationId: src.evotor.views.callback_verify_user
+      tags:
+      - Evotor
+      description: "Callback о авторизации существующего пользователя в нашем сервисе с помощью данных учётной записи пользователя Эвотор"
+      security:
+        - bearerAuthEvotor: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  maxLength: 150
+                  description: "Идентификатор пользователя Эвотор."
+                  example: "01-000000000000001"
+                username:
+                  $ref: "#/components/schemas/email"
+                password:
+                  type: string
+                  maxLength: 50
+                  description: "Пароль пользователя в стороннем сервисе"
+                  example: "12345678"
+
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                properties:
+                  userId:
+                    type: string
+                    maxLength: 150
+                    description: "Идентификатор пользователя Эвотор."
+                    example: "01-000000000000001"
+                  token:
+                    type: string
+                    description: "Bearer-токен, с помощью которого Облако Эвотор авторизует свои запросы к стороннему сервису."
+                    example: "toaWaep4chou7ahkoogiu9Iusaht9ima"
+
+  /evotor/user/token:
+    post:
+      summary: "Передача токена Облака Эвотор"
+      operationId: src.evotor.views.callback_token
+      tags:
+      - Evotor
+      description: "Передаёт токен Облака Эвотор, после того, как пользователь установил приложение в Личном кабинете. Используйте токен для авторизации запросов своего приложения к Облаку Эвотор."
+      security:
+        - bearerAuthEvotor: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  maxLength: 150
+                  description: "Идентификатор пользователя Эвотор."
+                token:
+                  type: string
+                  description: "Токен, с которым приложение будет обращаться в Облако Эвотор для запроса данных по пользователю с идентификатором."
+                  example: "f46b89a5-8e80-4591-b0aa-94551790444b"
+
+      responses:
+        '200':
+          description: ""
+          content:
+            {}
+
+  /evotor/subscription/billing:
+    post:
+      summary: "События подписки"
+      operationId: src.evotor.views.callback_subscription
+      tags:
+      - Evotor
+      description: "Связанные с биллингом события, которые Облако Эвотор передаёт в сторонний сервис."
+      security:
+        - bearerAuthEvotor: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  maxLength: 150
+                  description: "Идентификатор пользователя Эвотор."
+                subscriptionId:
+                  type: string
+                  description: "Идентификатор подписки. Формат – uuid4."
+                  example: "a99fbf70-6307-4acc-b61c-741ee9eef6c0"
+                productId:
+                  type: string
+                  description: "Идентификатор приложения. Формат – uuid4."
+                  example: "c0d01x35-5193-4cc2-9bfb-be20e0679498"
+                timestamp:
+                  type: string
+                  format: date-time
+                  description: "Дата и время отправки события. В соответствовии с ISO 8601."
+                  example: "2017-04-20T18:26:37.753+0000"
+                sequenceNumber:
+                  type: integer
+                  description: "Номер события в последовательности. Номер непрерывно возрастает начиная с единицы. Необходим для соблюдения порядка обработки событий. Номер события уникален в рамках подписки (subscriptionId), таким образом, при переустановке приложения номерация событий начнётся сначала."
+                  example: 4
+                type:
+                  type: string
+                  description: "Типы событий:\n\nSubscriptionCreated – новая подписка. Сообщает о том, что пользователь установил приложение в Личном кабинете. Приходит в начале пробного периода или перед сообщением об успешной оплате, если пробного периода нет.\n\nAddonsUpdated – список платных опций, выбранных пользователем.\n\nSubscriptionActivated – подписка активирована. Сообщает об успешной оплате.\n\nSubscriptionRenewed – подписка продлена на следующий период. Сообщает об успешной оплате очередного периода.\n\nSubscriptionTermsChanged – изменились условия подписки, например, тарифный план или количество устройств.\n\nSubscriptionTerminationRequested – Пользователь отправил запрос на завершение подписки (удалил приложение из Личного кабинета). Пользователь может возобновить подписку до окончания оплаченного периода.\n\nSubscriptionTerminated – Подписка завершена. Приходит если не прошла регулярная оплата, независимо от того запросил пользователь завершение подписки или нет."
+                  example: "a99fbf70-6307-4acc-b61c-741ee9eef6c0"
+
+      responses:
+        '200':
+          description: ""
+          content:
+            {}
+
+  /evotor/inventories/stores/{storeUuid}/documents:
+    put:
+      summary: "События магазина"
+      operationId: src.evotor.views.callback_shops
+      tags:
+      - Evotor
+      description: "Передать документы в сторонний сервис."
+      parameters:
+        - in: path
+          name: storeUuid
+          schema:
+            type: string
+          required: true
+
+      security:
+        - bearerAuthEvotor: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      uuid:
+                        type: string
+                        description: "Идентификатор приложения. Формат – uuid4."
+                        example: "c0d01x35-5193-4cc2-9bfb-be20e0679498"
+                      address:
+                        type: string
+                        description: "Адрес магазина."
+                        example: "Адрес"
+                      name:
+                        type: string
+                        description: "Название магазина"
+                        example: "Сокольники"
+
+      responses:
+        '200':
+          description: ""
+          content:
+            {}
+
+  # Авторизация. Передать: почта и пароль. Вернуть: да, нет.
+  # Получить информацию о лояльности. Передать: токен. Вернуть: инфу о лояльности.
+  # Измение лояльности. Передать: параметры которые изменяются. Вернуть: да, либо ошибку подробную.
+
+
+  /adminsc/auth:
+    post:
+      summary: "Получить токен авторизации"
+      operationId: src.adminsc.views.auth
+      tags:
+      - AdminSC
+      description: ""
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: "Email"
+                  example: "test1@example.com"
+                password:
+                  type: string
+                  description: "Password"
+                  example: "1111"
+
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                properties:
+                  token:
+                    type: string
+                    description: "Bearer-токен."
+                    example: "toaWaep4chou7ahkoogiu9Iusaht9ima"
+  /adminsc/loyalty/subscription:
+    get:
+      summary: "Получить статус подписки"
+      operationId: src.adminsc.views.get_subscription
+      tags:
+      - AdminSC
+      description: "Получить статус подписки"
+      security:
+        - bearerAuthAdmin: []
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                properties:
+                  isActive:
+                    type: boolean
+                    description: "Подписка активна или нет"
+                    example: true
+  /adminsc/loyalty:
+    get:
+      summary: "Информация о лояльности"
+      operationId: src.adminsc.views.get_loyalty
+      tags:
+      - AdminSC
+      description: "Информация о лояльности"
+      security:
+        - bearerAuthAdmin: []
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                properties:
+                  accrualPercent:
+                    type: string
+                    description: "курс начисления бонусных баллов"
+                    example: "1"
+                  minAccrualThreshold:
+                    type: string
+                    description: "минимальная сумма покупки, при которой производится начисление бонусных баллов"
+                    example: "1"
+                  accrualRate:
+                    type: string
+                    description: "курс списания бонусного балла"
+                    example: "1"
+                  maxWriteoffPercent:
+                    type: string
+                    description: "процент покупки, который может быть оплачен за счет бонусов"
+                    example: "100"
+                  bonusActivationDelay:
+                    type: string
+                    description: "срок активации бонусных баллов, сек."
+                    example: "400"
+                  bonusLifetime:
+                    type: string
+                    description: "срок жизни бонусных баллов, сек."
+                    example: "500"
+                  name:
+                    type: string
+                    description: "Тип контракта."
+                    example: "Bonus"
+                  generation:
+                    type: string
+                    description: "Версия контракта"
+                    example: "3.0"
+                  isSimultaneous:
+                    type: boolean
+                    description: "одновременное списание и начисление баллов."
+                    example: true
+              examples:
+                v3:
+                  value:
+                    accrualPercent: "2"
+                    minAccrualThreshold: "1"
+                    accrualRate: "1"
+                    maxWriteoffPercent: "100"
+                    isSimultaneous: true
+                    name: "Bonus"
+                    generation: "3.0"
+                v2:
+                  value:
+                    accrualPercent: "2"
+                    minAccrualThreshold: "1"
+                    accrualRate: "1"
+                    maxWriteoffPercent: "100"
+                    bonusActivationDelay: "400"
+                    bonusLifetime: "500"
+                    isSimultaneous: true
+                    name: "Bonus"
+                    generation: "2.0"
+
+    put:
+      summary: "Редактировать лояльность"
+      operationId: src.adminsc.views.edit_loyalty
+      tags:
+      - AdminSC
+      description: "Редактировать лояльность"
+      security:
+        - bearerAuthAdmin: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                accrualPercent:
+                    type: string
+                    description: "курс начисления бонусных баллов"
+                    example: "100"
+                minAccrualThreshold:
+                  type: string
+                  description: "минимальная сумма покупки, при которой производится начисление бонусных баллов"
+                  example: "1"
+                accrualRate:
+                  type: string
+                  description: "курс списания бонусного балла"
+                  example: "1"
+                maxWriteoffPercent:
+                  type: string
+                  description: "процент покупки, который может быть оплачен за счет бонусов"
+                  example: "100"
+                bonusActivationDelay:
+                  type: string
+                  description: "срок активации бонусных баллов, сек."
+                  example: "1"
+                bonusLifetime:
+                  type: string
+                  description: "срок жизни бонусных баллов, сек."
+                  example: "999999"
+                isSimultaneous:
+                  type: boolean
+                  description: "одновременное списание и начисление баллов."
+                  example: true
+
+      responses:
+        '202':
+          description: ""
+          content:
+            {}
+        '402':
+          description: "Требуется оплата. Подписка не актива"
+          content:
+            application/json:
+              schema:
+                example: {}
+
+
+components:
+
+  securitySchemes:
+    bearerAuthEvotor:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      x-bearerInfoFunc: src.middleware.bearer_auth_evotor
+
+    bearerAuthAdmin:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      x-bearerInfoFunc: src.middleware.bearer_auth_adminsc
+
+    bearerAuthPos:
+      type: apiKey
+      in: header
+      name: Dmpos-Authorization
+      x-apikeyInfoFunc: src.middleware.bearer_auth_pos
+
+  examples:
+    EmptyTypeLoyalty:
+      value:
+        type: "nothing"
+        currency_code: 643
+        currency_name: "RUB"
+        thresholds: [[0,0]]
+        url: "https://pos-api-int.Rusbonus.com/20130701/loyalties/1609"
+
+    FullTypeLoyaltyBonus:
+      value:
+        url: "http://dm.api/20130701/loyalties/2001"
+        currency_code: 643
+        currency_name: "RUB"
+        min_purchase_amount: 250
+        amount_to_bonus: [1, "1.5234"]
+        bonus_to_amount: [1, 3]
+        max_purchase_percentage: 60
+        expiration: 120
+        type: "bonus"
+
+    PurchaseWithGift:
+      value:
+        id: 4
+        url: null
+        doc_id: "КЧ-128"
+        date: "2020-04-30 17:48:07 +0700"
+        sum_total: "1000.00"
+        sum_discount: "250.00"
+        curr_iso_code: 810
+        curr_iso_name: "RUB"
+        pos: "1"
+        discount: 25
+        sum_bonus: -50
+        coupons: "10741"
+        coupons_url: null
+        items: []
+        items_url: null
+        gift_counters:
+          - applied: true
+            coupon: null
+            current: "2.000"
+            limit: "5.000"
+            until_date: "2018-12-10"
+            exp_date: "2018-12-17"
+            offer_name: "6th cup as a gift"
+            offer_info: "Купи 5 чашек и получи 6-ю в подарок!"
+
+    PurchaseWithoutCoupon:
+      value:
+        id: 4
+        url: null
+        doc_id: "КЧ-128"
+        date: "2020-04-30 17:48:07 +0700"
+        sum_total: "1000.00"
+        sum_discount: "250.00"
+        curr_iso_code: 810
+        curr_iso_name: "RUB"
+        pos: "1"
+        discount: 25
+        sum_bonus: -50
+        coupons: "10741"
+        coupons_url: null
+        items: []
+        items_url: null
+
+    PurchaseAccrualCancellation:
+      value:
+        sum_total: "1000.00"
+        date: "2020-04-30 17:48:07 +0700"
+        url: null
+        sum_discount: "250.00"
+        curr_iso_code: 810
+        curr_iso_name: "RUB"
+        pos: "1"
+        discount: 25
+        coupons_url: null
+        items_url: null
+        items: []
+        sum_bonus: "50 начислено, 100 списано"
+        doc_id: "КЧ-128"
+        id: 4
+
+    Purchase:
+      value:
+        id: 4
+        url: "http://dm.api/20130701/users/1003/purchases/4"
+        doc_id: "КЧ-205"
+        date: "2020-04-30 17:48:07 +0700"
+        sum_total: "1000.00"
+        sum_discount: "30.00"
+        curr_iso_code: 810
+        curr_iso_name: "RUB"
+        pos: "1"
+        discount: 3
+        sum_bonus: 0
+        coupons: "10741"
+        coupons_url: "http://dm.api/20130701/users/1003/coupons/?id=4"
+        items:
+          - item_gtin: ""
+            item_code: "2561389462075"
+            group_code: "4678523457850"
+            quantity: "1.700"
+            sum_total: "1000.00"
+            sum_with_discount: "0.00"
+          - item_gtin: ""
+            item_code: "2561389462074"
+            group_code: "4678523457850"
+            quantity: "1.700"
+            sum_total: "1000.00"
+            sum_with_discount: "0.00"
+        items_url: "https://pos-api-int.Rusbonus.com/20130701/users/12475/purchases/2571483/items/"
+
+
+  parameters:
+    DM-Authorization:
+      name: "DM-Authorization"
+      in: header
+      schema:
+        type: string
+        example: "dmapptoken 550e8400-e29b-41d4-a716-446655440000"
+        description: "Этот ключ создаётся и выдаётся разработчикам приложений, использующим API, сотрудниками компании Rusbonus."
+
+    _dmapptoken:
+      name: "_dmapptoken"
+      in: query
+      schema:
+        type: string
+        example: "dmapptoken 550e8400-e29b-41d4-a716-446655440000"
+        description: "Этот ключ создаётся и выдаётся разработчикам приложений, использующим API, сотрудниками компании Rusbonus."
+
+    merchant_id:
+      name: "merchant_id"
+      in: path
+      required: true
+      schema:
+        type: string
+        maxLength: 100
+
+    user_id:
+      name: "user_id"
+      in: path
+      required: true
+      schema:
+        type: string
+        maxLength: 200
+
+    card:
+      name: "card"
+      in: path
+      required: true
+      schema:
+        type: string
+        maxLength: 100
+
+    item_N_gtin:
+      name: "item_N_gtin"
+      in: query
+      schema:
+        $ref: '#/components/schemas/item_N_gtin'
+      description: "Вместо N порядковый номер товара\n\nСтрока цифр длиной 13.\n\nИдентификатор товара формата [GTIN](http://ru.wikipedia.org/wiki/GTIN) в стандарте [GS1](http://www.gs1ru.org/)."
+
+    item_N_id:
+      name: "item_N_id"
+      in: query
+      schema:
+        $ref: '#/components/schemas/item_N_id'
+      description: "Вместо N порядковый номер товара\n\nСтрока длиной до 100.\n\nИдентификатор товара в учётной системе участника."
+
+    item_N_gid:
+      name: "item_N_gid"
+      in: query
+      schema:
+        $ref: '#/components/schemas/item_N_gid'
+      description: "Вместо N порядковый номер товара\n\nНеотрицательное число с точностью 3 знака после запятой.\n\nИдентификатор группы товара в учётной системе участника."
+
+    item_N_q:
+      name: "item_N_q"
+      in: query
+      schema:
+        $ref: '#/components/schemas/item_N_q'
+      description: "Вместо N порядковый номер товара\n\nНеотрицательное число с точностью 3 знака после запятой.\n\nКоличество товара в номенклатурной позиции покупки. Формат числовых параметров см. в Числовые параметры [7]."
+
+    item_N_sum:
+      name: "item_N_sum"
+      in: query
+      schema:
+        $ref: '#/components/schemas/item_N_sum'
+      description: "Вместо N порядковый номер товара\n\nНеотрицательное число с точностью 2 знака после запятой.\n\nСтоимость номенклатурной позиции покупки без скидки. Формат числовых параметров см. в Числовые параметры [7]."
+
+    item_N_sumwd:
+      name: "item_N_sumwd"
+      in: query
+      schema:
+        $ref: '#/components/schemas/item_N_sumwd'
+      description: "Вместо N порядковый номер товара\n\nНеотрицательное число с точностью 2 знака после запятой.\n\nСтоимость номенклатурной позиции покупки со скидкой. Формат числовых параметров см. в Числовые параметры [7]."
+
+  schemas:
+    item_N_gtin:
+      type: string
+      description: "Вместо N порядковый номер товара\n\nСтрока цифр длиной 13.\n\nИдентификатор товара формата [GTIN](http://ru.wikipedia.org/wiki/GTIN) в стандарте [GS1](http://www.gs1ru.org/)."
+
+    item_N_id:
+      type: string
+      description: "Вместо N порядковый номер товара\n\nСтрока длиной до 100.\n\nИдентификатор товара в учётной системе участника."
+
+    item_N_gid:
+      type: string
+      description: "Вместо N порядковый номер товара\n\nНеотрицательное число с точностью 3 знака после запятой.\n\nИдентификатор группы товара в учётной системе участника."
+
+    item_N_q:
+      type: string
+      description: "Вместо N порядковый номер товара\n\nНеотрицательное число с точностью 3 знака после запятой.\n\nКоличество товара в номенклатурной позиции покупки. Формат числовых параметров см. в Числовые параметры [7]."
+
+    item_N_sum:
+      type: string
+      description: "Вместо N порядковый номер товара\n\nНеотрицательное число с точностью 2 знака после запятой.\n\nСтоимость номенклатурной позиции покупки без скидки. Формат числовых параметров см. в Числовые параметры [7]."
+
+    item_N_sumwd:
+      type: string
+      description: "Вместо N порядковый номер товара\n\nНеотрицательное число с точностью 2 знака после запятой.\n\nСтоимость номенклатурной позиции покупки со скидкой. Формат числовых параметров см. в Числовые параметры [7]."
+
+    coupons:
+      type: array
+      nullable: true
+      description: "Список алфавитно-цифровых строк без знаков препинания, разделённых запятыми.\n\nСписок идентификаторов купонов (сертификатов) пользователя, которые следует погасить в этой покупке."
+      items:
+        type: string
+        pattern: "^[a-zA-Z0-9,]+$"
+      example: ["10741"]
+
+    date:
+      type: string
+      description: "Дата и время в формате ISO.\n\nДата и время покупки. Формат см. в Параметры даты и времени [7]. Этот параметр принимается только для отдельных клиентов."
+      example: "2012-09-15 20:00:00 +0700"
+
+    curr_iso_code:
+      type: integer
+      minimum: 0
+      description: "Целое положительное число.\n\nЦифровой код валюты в стандарте [ISO 4217](http://ru.wikipedia.org/wiki/ISO_4217)."
+      example: 810
+
+    curr_iso_name:
+      type: string
+      maxLength: 3
+      description: "Строка символов длиной 3.\n\nАлфавитный код валюты в стандарте ISO 4217."
+      example: "RUB"
+
+    sum_with_discount:
+      type: number
+      format: float
+      minimum: 0
+      description: "Неотрицательное число с точностью до 2 знаков после запятой.\n\nСумма покупки со скидкой. Формат числовых параметров см. в Числовые параметры [7]."
+      example: "1980.00"
+
+    sum_total:
+      type: number
+      format: float
+      minimum: 0
+      description: "Неотрицательное число с точностью до 2 знаков после запятой.\n\nСумма покупки без скидки. Формат числовых параметров см. в Числовые параметры [7]."
+      example: "3000.00"
+
+    doc_id:
+      type: string
+      maxLength: 50
+      description: "Строка длиной до 50. \n\nИдентификатор покупки в учётной системе участника Системы."
+      example: "101"
+
+    id:
+      type: integer
+      minimum: 0
+      description: "Целое положительное число. \n\nИдентификатор покупки в Системе."
+      example: 4
+
+    merchant_shop:
+      type: string
+      description: "ID (строка цифр длиной до 25)\n\nИдентификатор участника системы - владельца терминала."
+      maxLength: 25
+
+    pos:
+      type: string
+      description: "Строка длиной до 25.\n\nНомер терминала (кассы)."
+      maxLength: 25
+      example: "1"
+
+    description:
+      type: string
+      description: "Строка длиной до 100.\n\nОписание терминала (кассы) - не обязательно."
+      maxLength: 100
+
+    token:
+      type: string
+      description: "Токен авторизации, которой следует использовать в качестве значения параметра id при вызове методов."
+      example: "dcb0cb4e77164e60612c162745b7072fbefeaba3"
+
+    token_url:
+      type: string
+      description: "Ссылка на ресурс созданного токена авторизации."
+      example: "http://dm.api/20130701/tokens/dcb0cb4e77164e60612c162745b7072fbefeaba3"
+
+    phone:
+      type: string
+      pattern: '\d{1,15}'
+      maxLength: 15
+      description: "Строка цифр длиной до 15.\n\nНомер телефона нового пользователя."
+
+    email:
+      type: string
+      maxLength: 100
+      description: "Строка цифр длиной до 100.\n\nАдрес электронной почты нового пользователя."
+      example: "test@example.com"
+
+    password:
+      type: string
+      description: "Строка: “True” или “False”.\n\nЕсли истина (“True”), то вернуть пароль нового пользователя."
+      example: "true"
+
+    discount:
+      type: integer
+      minimum: 0
+      description: "Целое положительное число.\n\nСкидка нового пользователя."
+      example: 1
+
+    bonus:
+      type: number
+      format: float
+      minimum: 0
+      description: "Положительное число с точностью до двух знаков после запятой.\n\nКоличество бонусных баллов пользователя у данного участника Системы, которые можно потратить. Формат числовых параметров см. в Числовые параметры [7]."
+
+    sum:
+      type: number
+      format: float
+      minimum: 0
+      description: "Положительное число с точностью до двух знаков после запятой.\n\nСумма всех покупок, совершённых пользователем у данного участника Системы. Формат числовых параметров см. в Числовые параметры [7]."
+
+    num:
+      type: integer
+      minimum: 0
+      description: "Целое положительное число.\n\nКоличество покупок нового пользователя."
+
+    cancel:
+      type: string
+      description: ""
+      example: "true"
+
+    Format:
+      type: object
+      properties:
+        description:
+          type: string
+          example: "Aztec 2D barcode format"
+        enabled:
+          type: boolean
+          example: true
+        id:
+          type: integer
+          format: int64
+          example: 1
+        format:
+          type: string
+          example: "AZTEC"
+
+    Loyalty:
+      type: object
+      properties:
+        type:
+          type: string
+          example: "bonus"
+        currency_code:
+          type: integer
+          format: int64
+          example: 643
+          description: "Целое положительное число\n\nЦифровой код валюты в стандарте ISO 4217 [http://ru.wikipedia.org/wiki/ISO_4217]."
+        currency_name:
+          type: string
+          example: "RUB"
+          description: "Строка символов длиной 3.\n\nАлфавитный код валюты в стандарте ISO 4217 [http://ru.wikipedia.org/wiki/ISO_4217]."
+        min_purchase_amount:
+          type: integer
+          format: int64
+          example: 1
+          description: "Положительное целое число.\n\nМинимальная сумма покупки для начисления бонусных баллов."
+        max_purchase_percentage:
+          type: integer
+          format: int64
+          example: 50
+          description: "Положительное целое число в диапазоне от 0 до 100.\n\nМаксимальная часть стоимости покупки в процентах, которая может быть оплачена бонусными баллами."
+        expiration:
+          type: integer
+          format: int64
+          example: 30
+          description: "Положительное целое число.\n\nКоличество дней, спустя которые начисленные бонусные баллы сгорят."
+        amount_to_bonus:
+          type: array
+          description: "Список алфавитно-цифровых строк без знаков препинания, разделённых запятыми.\n\nСписок идентификаторов купонов (сертификатов) пользователя, которые следует погасить в этой покупке."
+          items:
+            type: string
+          example: [100, "10.0000"]
+        bonus_to_amount:
+          type: array
+          description: "Список алфавитно-цифровых строк без знаков препинания, разделённых запятыми.\n\nСписок идентификаторов купонов (сертификатов) пользователя, которые следует погасить в этой покупке."
+          items:
+            type: string
+          example: [1, "0.1000"]
+
+    Card:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "Проверена"
+        format:
+          $ref: '#/components/schemas/Format'
+        url:
+          type: string
+          format: uri
+          example: "http://testserver/20130701/cards/1"
+        user_url:
+          type: string
+          format: uri
+          example: "http://testserver/20130701/users/1003"
+        value:
+          type: string
+          example: "555333777"
+        created:
+          type: string
+          format: date-time
+          example: "2013-01-01 00:00:00"
+        id:
+          type: integer
+          format: int64
+          example: 1
+
+    Gift_counters:
+      type: object
+      properties:
+        applied:
+          type: string
+          enum:
+          - "true"
+          - "false"
+          description: "Строка вида «True» или «False»\n\nИстина, если подарочная акция применена к покупке (изменён счётчик или выдан подарок)."
+          example: "true"
+        coupon:
+          type: string
+          maxLength: 25
+          description: "Строка арабских цифр длиной 25.\n\nИдентификатор выданного купона на получение вознаграждения по подарочной акции."
+          example: null
+        current:
+          type: string
+          description: "Неотрицательное число с фиксированной точкой.\n\nТекущее значение счётчика накоплений Пользователя в подарочной акции."
+          example: "2.000"
+        limit:
+          type: string
+          description: "Неотрицательное число с фиксированной точкой.\n\nЗначение счётчика накоплений Пользователя в подарочной акции для получения подарка."
+          example: "5.000"
+        until_date:
+          type: string
+          description: "Дата в формате ISO\n\nДата, до которой необходимо увеличить счётчик накоплений до значения limit, чтобы получить подарок. В эту дату счётчик накоплений сбрасывается в 0."
+          example: "2018-12-10"
+        exp_date:
+          type: string
+          description: "Дата в формате ISO\n\nСрок действия подарочной акции."
+          example: "2018-12-17"
+        offer_name:
+          type: string
+          description: "Наименование подарочной акции."
+          example: "6th cup as a gift"
+        offer_info:
+          type: string
+          description: "Описание подарочной акции."
+          example: "Купи 5 чашек и получи 6-ю в подарок!"
+
+    User:
+      type: object
+      properties:
+        purchases:
+          type: integer
+          example: 3
+        first_name:
+          type: string
+          example: "Иван Петрович Сидоров"
+        last_name:
+          type: string
+          example: ""
+        middle_name:
+          type: string
+          example: ""
+        bonus:
+          $ref: '#/components/schemas/bonus'
+        purchases_url:
+          type: string
+          example: "http://dm.api/20130701/users/1003/purchases/"
+        discount:
+          type: integer
+          example: 3
+        amount:
+          type: string
+          example: "7000.00"
+        url:
+          type: string
+          example: "http://dm.api/20130701/users/1003"
+        loyalty_url:
+          type: string
+          example: "http://dm.api/20130701/loyalties/2001"
+        photo_urls:
+          type: object
+          properties:
+            100x125:
+              type: string
+              example: "http://dm.api/img/default/avatar-100x100.png"
+            50x62:
+              type: string
+              example: "http://dm.api/img/default/avatar-50x50.png"
+          example:
+        coupons_url:
+          type: string
+          example: "http://dm.api/20130701/users/1003/coupons/"
+        id:
+          type: integer
+          example: 1003
+        card:
+          type: string
+          example: "4620011139016809354533116"
+
+    Purchase:
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        url:
+          type: string
+          nullable: true
+          description: "URL\n\nСсылка на покупку в API"
+        doc_id:
+          $ref: '#/components/schemas/doc_id'
+        date:
+          $ref: '#/components/schemas/date'
+        sum_total:
+          $ref: '#/components/schemas/sum_total'
+        sum_discount:
+          type: string
+          description: "Неотрицательное число с точностью 2 знака после запятой.\n\nСумма скидки. Формат числовых параметров см. в Числовые параметры [7]."
+          example: "30.00"
+        curr_iso_code:
+          $ref: '#/components/schemas/curr_iso_code'
+        curr_iso_name:
+          $ref: '#/components/schemas/curr_iso_name'
+        pos:
+          type: string
+          description: "Строка длиной до 25. \n\nИдентификатор POS в учётной системе участника."
+          example: "1"
+        discount:
+          type: integer
+          minimum: 0
+          description: "Целое неотрицательное число.\n\nОбщая скидка на покупку в процентах (округлено до целого)."
+        sum_bonus:
+          anyOf:
+          - type: number
+            format: float
+          - type: string
+          description: "Неотрицательное число с точностью 2 знака после запятой.\n\nКоличество бонусов, начисленных пользователю за покупку или списанных за скидку. Формат числовых параметров см. в Числовые параметры [7]. При одновременном начислении и списании бонусных баллов это строка вида «N начислено, M списано», где M - целое неотрицательное число списанных в покупке бонусных баллов, а N - целое неотрицательное число начисл"
+
+        coupons:
+          $ref: '#/components/schemas/coupons'
+        coupons_url:
+          type: string
+          nullable: true
+          description: "URL\n\nСсылка на купоны, погашенные в этой покупке."
+          example: "http://dm.api/20130701/users/1003/coupons/?id=1"
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+          description: "Массив объектов.\n\nАтрибуты (реквизиты) номенклатурных позиций покупки. Имена и типы атрибутов см. в Таблица 17, «Атрибуты номенклатурной позиции покупки.» [39]."
+        items_url:
+          type: string
+          description: "URL\n\nСсылка на ресурс товарных позиций покупки."
+          example: "http://dm.api/20130701/users/1003/purchases/1/items/"
+
+    Coupon:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "ACTIVE"
+        redeem_auto:
+          type: string
+          example: "true"
+        date_bought:
+          type: string
+          example: "2012-09-15 20:00:00 +0700"
+        redeem_scope:
+          type: string
+          example: "RS_ITEMS_IN_PURCHASE"
+        coupon_condition:
+          type: string
+          example: "Условия акции: дата начала 2012-09-01, дата окончания 2013-11-01; скидка 40 %"
+        curr_iso_code:
+          type: integer
+          example: 810
+        curr_iso_name:
+          type: string
+          example: "RUB"
+        number:
+          type: string
+          example: "65489878"
+        url:
+          type: string
+          example:  "http://testserver/20130701/users/1003/coupons/1"
+        date_expiration:
+          type: string
+          example: "2013-11-01 00:00:00 +0700"
+        award_type:
+          type: string
+          example: "AWARD_DISCOUNT"
+        date_used:
+          type: string
+          example: null
+        award_value:
+          type: string
+          example: "40.00"
+        offer_name:
+          type: string
+          example: "unit-test"
+        id:
+          type: integer
+          example: 1
+        redeem_condition:
+          type: string
+          example: "RC_NOT_DEFINED"
+
+    # ItemNomenclature:
+    #   properties:
+    #     group_code:
+    #       type: string
+    #       description: "Строка длиной до 100.\n\nИдентификатор группы товара в учётной системе участника."
+    #       example: "8974126380001"
+    #     name:
+    #       type: string
+    #       description: "Строка длиной до 100.\n\nНаименование товара."
+    #       example: "2000.00"
+    #     item_code:
+    #       type: string
+    #       description: "Строка длиной до 100.\n\nИдентификатор группы товара в учётной системе участника."
+    #       example: "8974126385215"
+    #     price:
+    #       type: string
+    #       description: "Неотрицательное число с точностью 2 знака после запятой.\n\nСтоимость одной единицы товара. Формат числовых параметров см. в Числовые параметры [7]."
+    #       example: "1980.00"
+    #     item_gtin:
+    #       type: string
+    #       description: "Строка цифр длиной до 14.\n\nИдентификатор товара формата GTIN <http://ru.wikipedia.org/wiki/GTIN> в стандарте GS1 <http://www.gs1ru.org/>."
+    #       example: ""
+    #     url:
+    #       type: string
+    #       description: "URL\n\nСсылка на элемент в справочнике."
+    #     id:
+    #       type: integer
+    #       description: "Идентификатор элемента в справочнике номенклатуры."
+    #       example: 3
+
+    Item:
+      properties:
+        group_code:
+          type: string
+          maxLength: 100
+          description: "Строка длиной до 100.\n\nИдентификатор группы товара в учётной системе участника."
+          example: "8974126380001"
+        sum_total:
+          $ref: '#/components/schemas/sum_total'
+        item_code:
+          type: string
+          maxLength: 100
+          description: "Строка длиной до 100.\n\nИдентификатор группы товара в учётной системе участника."
+          example: "8974126385215"
+        sum_with_discount:
+          $ref: '#/components/schemas/sum_with_discount'
+        item_gtin:
+          type: string
+          maxLength: 14
+          description: "Строка цифр длиной до 14.\n\nИдентификатор товара формата [GTIN](http://ru.wikipedia.org/wiki/GTIN) в стандарте [GS1](http://www.gs1ru.org/)."
+          example: ""
+        quantity:
+          type: string
+          description: "Неотрицательное число с точностью 3 знака после запятой.\n\nКоличество товара в номенклатурной позиции покупки. Формат числовых параметров см. в Числовые параметры [7]."
+          example: "2.000"

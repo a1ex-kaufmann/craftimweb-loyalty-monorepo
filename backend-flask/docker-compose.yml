@@ -1,0 +1,29 @@
+version: '3'
+services:
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    environment:
+      - LOG_FILE=${LOG_FILE}
+      - PATH_TO_DB=${PATH_TO_DB}
+      - PORT=${PORT}
+      - DEBUG=${DEBUG}
+      - EVOTOR_API_KEY=${EVOTOR_API_KEY}
+      - DM_APP_TOKEN=${DM_APP_TOKEN}
+      - SECRET_KEY=${SECRET_KEY}
+      - NODE=${NODE}
+      - SENDER=${SENDER}
+      - PRIVATE=${PRIVATE}
+      - CORE_CONTRACT=${CORE_CONTRACT}
+      - JRC1_CONTRACT=${JRC1_CONTRACT}
+      - ROUTER_CONTRACT=${ROUTER_CONTRACT}
+    volumes:
+      - ./data:/data
+    # depends_on:
+    #   - redis
+
+  # redis:
+  #   image: redis:6.2

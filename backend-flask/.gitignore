@@ -1,0 +1,26 @@
+# Virtual environment
+venv
+Pipfile
+Pipfile.lock
+.python-version
+
+# IDE
+.idea
+.vscode
+
+# Config file
+api/config.py
+
+# Logs
+*.log
+
+# Database
+sqlite.db
+
+# pycache
+__pycache__
+
+# test.py
+./api/test.py
+api/test.py
+test.py
