@@ -96,7 +96,7 @@ export const StoreCard = ({ store, isActive, onActivate, onExpand }: StoreCardPr
           //   exit={{ opacity: 0, y: -20 }}
           //   transition={{ duration: 0.1 }}
           >
-            <QRCodeSVG value={`store_id:${store.wallet}`} size={128} />
+            <QRCodeSVG value={`${store.wallet}`} size={128} />
           </motion.div>
         )}
       </AnimatePresence>
