@@ -18,6 +18,7 @@ type Store = {
   bonuses: number
   color: string
   conversionRate: number
+  wallet: string
 }
 
 export default function Home() {
